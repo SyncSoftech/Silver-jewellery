@@ -1,3 +1,4 @@
+// pages/chackout.js
 import React, { useEffect, useState } from 'react';
 import { AiOutlinePlusCircle, AiOutlineMinusCircle, AiOutlinePlus, AiOutlineCheck } from "react-icons/ai";
 import { BsBagCheckFill } from "react-icons/bs";
@@ -28,7 +29,6 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
     isDefault: false
   });
 
-  // Fetch user addresses on component mount
   useEffect(() => {
     if (isAuthenticated()) {
       fetchUserAddresses();
@@ -39,18 +39,13 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/address`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       if (data.success) {
         setAddresses(data.addresses);
-        // Set default address if available
         const defaultAddress = data.addresses.find(addr => addr.isDefault);
-        if (defaultAddress) {
-          setSelectedAddress(defaultAddress._id);
-        }
+        if (defaultAddress) setSelectedAddress(defaultAddress._id);
       }
     } catch (error) {
       console.error('Error fetching addresses:', error);
@@ -60,10 +55,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleAddressSubmit = async (e) => {
@@ -72,18 +64,13 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       redirectToLogin(router);
       return;
     }
-
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/address`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formData)
       });
-
       const data = await response.json();
       if (data.success) {
         toast.success('Address saved successfully');
@@ -115,26 +102,21 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       toast.error('Please select a delivery address');
       return;
     }
-    
     if (Object.keys(cart).length === 0) {
       toast.error('Your cart is empty');
       return;
     }
-
     await initiatePayment();
   };
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
-      script.onload = () => {
-        resolve(true);
-      };
-      script.onerror = () => {
-        resolve(false);
-      };
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
   };
@@ -144,90 +126,105 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       redirectToLogin(router);
       return;
     }
-    
+
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
-      // Create order in your backend
-      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pretransaction`, {
+
+      // 1) Create razorpay order & DB order (pretransaction)
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pretransaction`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          cart,
-          subTotal,
-          addressId: selectedAddress
-        })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ cart, subTotal, addressId: selectedAddress })
       });
-      
-      const data = await response.json();
-      
+      const data = await resp.json();
       if (!data.success) {
         throw new Error(data.error || 'Failed to initialize payment');
       }
 
-      // Load Razorpay script if not already loaded
-      if (!window.Razorpay) {
-        const loaded = await loadRazorpayScript();
-        if (!loaded) {
-          throw new Error('Failed to load payment processor. Please try again.');
-        }
+      const razorpayOrderId = data.order?.id || data.order?.order_id;
+      const dbOrderId = data.dbOrderId;
+      if (!razorpayOrderId || !dbOrderId) {
+        throw new Error('Payment initialization returned invalid ids');
       }
 
-      // Razorpay options
+      // 2) Load Razorpay script
+      const loaded = await loadRazorpayScript();
+      if (!loaded) throw new Error('Failed to load payment processor. Try again.');
+
+      // prefill details
+      const selectedAddr = addresses.find(a => a._id === selectedAddress) || {};
+      const prefillName = selectedAddr.fullName || formData.fullName || '';
+      const prefillContact = selectedAddr.phone || formData.phone || '';
+      const prefillEmail = ''; // if you have user email, set here
+
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: data.order.amount,
         currency: data.order.currency,
         name: 'Your Store Name',
         description: 'Order Payment',
-        order_id: data.order.id,
-        handler: function (response) {
-          // Store order details in localStorage as fallback
-          const orderDetails = {
-            orderId: data.order.orderId || response.razorpay_order_id,
+        order_id: razorpayOrderId,
+        handler: async function (razorpayResponse) {
+          // called when payment is completed on Razorpay
+          try {
+            setLoading(true);
+            // POST to /api/posttransaction for signature verification & marking order Paid
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posttransaction`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({
+                razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+                razorpayOrderId: razorpayResponse.razorpay_order_id,
+                razorpaySignature: razorpayResponse.razorpay_signature,
+                dbOrderId
+              })
+            });
 
-            status: 'processing',
-            totalAmount: subTotal,
-            paymentMethod: 'Online Payment (Razorpay)',
-            createdAt: new Date().toISOString(),
-            // Add any other relevant order details
-            items: Object.values(cart).map(item => ({
-              name: item.name,
-              price: item.price,
-              qty: item.qty,
-              // Add other item details as needed
-            }))
-            
-            
-          };
-          console.log(orderDetails);
-          localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
-          
-          // Redirect to success page with order ID
-          const orderId = data.orderId || response.razorpay_order_id;
-          router.push(`/order/success?orderId=${orderId}`);
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
+              toast.error(verifyData.error || 'Payment verification failed');
+              console.error('Verification failed', verifyData);
+              return;
+            }
+
+            // Save last order locally (useful fallback)
+            localStorage.setItem('lastOrder', JSON.stringify({
+              _id: verifyData.order._id || dbOrderId,
+              amount: verifyData.order.amount || subTotal,
+              status: verifyData.order.status || 'Paid',
+              paymentMethod: 'Online Payment (Razorpay)',
+              createdAt: verifyData.order.createdAt || new Date().toISOString(),
+              items: verifyData.order.orderItems || Object.values(cart).map(i => ({ name: i.name, qty: i.qty, price: i.price }))
+            }));
+
+            // Redirect to success page using DB order id returned from server
+            const finalOrderId = verifyData.order._id || dbOrderId;
+            router.push(`/order/success?orderId=${finalOrderId}`);
+
+            // optionally clear cart
+            // clearCart();
+          } catch (err) {
+            console.error('Post-payment error:', err);
+            toast.error('Something went wrong after payment. Contact support.');
+          } finally {
+            setLoading(false);
+          }
         },
         prefill: {
-          name: formData.fullName, // You can get this from user data
-          email: formData.email, // Get from user data
-          contact: formData.phone // Get from user data
+          name: prefillName,
+          email: prefillEmail,
+          contact: prefillContact
         },
         notes: {
-          address: formData.address, // Get from selected address
-          orderId: data.orderId
+          addressId: selectedAddress,
+          dbOrderId
         },
-        theme: {
-          color: '#3399cc'
-        }
+        theme: { color: '#3399cc' }
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-      
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error.message || 'Failed to process payment');
@@ -235,6 +232,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className='container px-2 sm:m-auto'>
