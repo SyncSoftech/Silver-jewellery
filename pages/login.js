@@ -11,10 +11,10 @@ function Login() {
     
     useEffect(()=>{
         if(localStorage.getItem('token')){
-            router.push('/')
+            const redirect = router.query.redirect || '/';
+            router.push(redirect);
         }
-        
-    },[])
+    },[router.query.redirect])
 
     const handleChange = (e) => {
         if (e.target.name == 'email') {
@@ -40,15 +40,19 @@ function Login() {
         setPassword('')
         if (response.success) {
             localStorage.setItem('token', response.token)
+            const redirect = router.query.redirect || '/';
             toast.success('You are successfully logged in!', {
                 position: "top-left",
-                autoClose: 3000,
+                autoClose: 1000,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
                 theme: "light",
+                onClose: () => {
+                    router.push(redirect);
+                }
             });
             setTimeout(() => {
                 router.push(process.env.NEXT_PUBLIC_HOST)

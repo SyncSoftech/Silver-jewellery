@@ -1,80 +1,134 @@
-const https = require('https');
+import Razorpay from 'razorpay';
+import mongoose from 'mongoose';
+import connectDB from '../../middleware/mongoose';
+import Order from '../../models/Order';
+import Address from '../../models/Address';
+import { verifyToken } from '../../utils/jwt';
 
-const PaytmChecksum = require('paytmchecksum');;
+const handler = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
 
-
-export default async function handler(req, res) {
-    if (req.method == 'POST'){
-
+  try {
+    // Verify authentication
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = verifyToken(token);
     
-    var paytmParams = {};
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
 
-    paytmParams.body = {
-        "requestType"   : "Payment",
-        "mid"           : process.env.NEXT_PUBLIC_PAYTM_MID,
-        "websiteName"   : "YOUR_WEBSITE_NAME",
-        "orderId"       : req.body.oid,
-        "callbackUrl"   : `${process.env.NEXT_PUBLIC_HOST}/api/posttransaction`,
-        "txnAmount"     : {
-            "value"     : req.body.subTotal,
-            "currency"  : "INR",
-        },
-        "userInfo"      : {
-            "custId"    : req.body.email,
-        },
+    const { cart, subTotal, addressId } = req.body;
+    
+    // Validate required fields
+    if (!cart || !subTotal || !addressId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: cart, subTotal, addressId' 
+      });
+    }
+
+    // Get the address details
+    const address = await Address.findById(addressId);
+    if (!address) {
+      return res.status(404).json({ success: false, error: 'Address not found' });
+    }
+
+    // Generate a unique order ID
+    const oid = `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    
+    // Initialize Razorpay
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    // Convert amount to paise (Razorpay's smallest currency unit)
+    const amountInPaise = Math.round(Number(subTotal) * 100);
+
+    // Create order options
+    const options = {
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: oid,
+      payment_capture: 1, // Auto-capture payment
+      notes: {
+        orderId: oid,
+        userId: decoded.userId,
+        addressId: addressId
+      }
     };
-    
-    /*
-    * Generate checksum by parameters we have in body
-    * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys 
-    */
-    const checksum = await PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), process.env.PAYTM_MKEY)
-    
-        paytmParams.head = {
-            "signature"    : checksum
-        };
-    
-        var post_data = JSON.stringify(paytmParams);
 
-        const requestAsync=async()=>{
-            return new Promise((resolve ,reject)=>{
-                var options = {
+    // Create order in Razorpay
+    const razorpayOrder = await razorpay.orders.create(options);
+
+    // Prepare order items - ensure all required fields are present and properly formatted
+    const orderItems = Object.values(cart).map(item => {
+      // Ensure product ID is a valid ObjectId
+      const productId = new mongoose.Types.ObjectId(item._id || item.productId);
+      
+      return {
+        product: productId,
+        name: item.name || 'Product',
+        price: parseFloat(item.price) || 0,
+        quantity: parseInt(item.qty || item.quantity || 1, 10),
+        image: item.img || item.image || ''
+      };
+    });
     
-                    /* for Staging */
-                    // hostname: 'securegw-stage.paytm.in',
-            
-                    /* for Production */
-                    hostname: 'securegw.paytm.in',
-            
-                    port: 443,
-                    path: `/theia/api/v1/initiateTransaction?mid=${process.env.NEXT_PUBLIC_PAYTM_MID}&orderId=${req.body.oid}`,
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Content-Length': post_data.length
-                    }
-                };
-            
-                var response = "";
-                var post_req = https.request(options, function(post_res) {
-                    post_res.on('data', function (chunk) {
-                        response += chunk;
-                    });
-            
-                    post_res.on('end', function(){
-                        console.log('Response: ', response);
-                        resolve(JSON.parse(response).body)
-                    });
-                });
-            
-                post_req.write(post_data);
-                post_req.end();
-            })
+    // Validate that we have at least one valid order item
+    if (!orderItems.length) {
+      return res.status(400).json({
+        success: false,
+        error: 'No valid items in cart'
+      });
+    }
 
-        }
+    // Prepare address data
+    const addressData = {
+      fullName: address.fullName,
+      phone: address.phone,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      country: address.country || 'India', // Default to India if not provided
+      postalCode: address.postalCode,
+      landmark: address.landmark || ''
+    };
 
-       let myr = await requestAsync()
-       res.status(200).json(myr)
-  
-}
-}
+    // Create order in our database
+    const newOrder = new Order({
+      userId: decoded.userId.toString(),
+      orderItems: orderItems,
+      shippingAddress: addressData,
+      billingAddress: addressData, // Using same address for billing and shipping
+      amount: parseFloat(subTotal),
+      status: 'Pending',
+      paymentInfo: {
+        razorpayOrderId: razorpayOrder.id,
+        status: 'created'
+      }
+    });
+
+    await newOrder.save();
+
+    // Return Razorpay order details to frontend
+    res.status(200).json({
+      success: true,
+      order: razorpayOrder,
+      orderId: newOrder.orderId,
+      dbOrderId: newOrder._id
+    });
+
+  } catch (error) {
+    console.error('Error in pretransaction:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to create order',
+      details: error.errors || {}
+    });
+  }
+};
+
+export default connectDB(handler);

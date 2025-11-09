@@ -67,12 +67,20 @@ export async function getServerSideProps(context) {
   if (!mongoose.connections[0].readyState) {
     await mongoose.connect(process.env.MONGO_URI)
   }
-  let orders = await Order.find({})
-
-
+  
+  // Use lean() to get plain JavaScript objects and convert ObjectId and Date to strings
+  let orders = await Order.find({}).lean().then(orders => 
+    orders.map(order => ({
+      ...order,
+      _id: order._id.toString(),
+      createdAt: order.createdAt?.toISOString(),
+      updatedAt: order.updatedAt?.toISOString(),
+      // Add any other date fields you might have in your Order model
+    }))
+  );
 
   return {
-    props: { orders: orders }, // will be passed to the page component as props
+    props: { orders: JSON.parse(JSON.stringify(orders)) }, // Double stringify/parse to ensure serialization
   }
 }
 
