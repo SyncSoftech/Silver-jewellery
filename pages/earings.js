@@ -1,87 +1,3 @@
-// import React from 'react'
-// import Link from 'next/link'
-// import Product from "@/models/Product"
-// import mongoose from "mongoose";
-
-
-
-
-// const Earrings = ({ Products }) => {
-//   return (
-//     <div>
-//       <section className="text-gray-600 body-font">
-//         <div className="container px-5 py-24 mx-auto">
-//           <div className="flex flex-wrap -m-4 justify-center">
-
-//             {Object.keys(Products).length===0 && <p>sorry all the Hoodies are currently out of stock. New stock coming soon!</p>}
-//             {Object.keys(Products).map((item) => {
-
-//               return <div passHref={true} key={Products[item]._id} className="lg:w-1/5 md:w-1/2 p-4 w-full cursor-pointer shadow-lg m-5">
-//                 <span className="block relative  rounded overflow-hidden">
-//                   <Link href={`/product/${Products[item].slug}`}><img alt="ecommerce" className="m-auto  h-[30vh] md:h-[36vh] block" src={Products[item].img} /></Link>
-//                 </span>
-//                 <Link href={`/product/${Products[item].slug}`}>
-//                   <div className="mt-4 text-center md:text-left ">
-//                     <h3 className="text-gray-500 text-xs tracking-widest title-font mb-1">Hoodies</h3>
-//                     <h2 className="text-gray-900 title-font text-lg font-medium">{Products[item].title}</h2>
-//                     <p className="mt-1">₹{Products[item].price}</p>
-//                     <div className="mt-1">
-//                       {Products[item].size.includes('') && <span className='border border-gray-300 px-1 mx-1'>Free</span>}
-//                       {Products[item].size.includes('S') && <span className='border border-gray-300 px-1 mx-1'>S</span>}
-//                       {Products[item].size.includes('M') && <span className='border border-gray-300 px-1 mx-1'>M</span>}
-//                       {Products[item].size.includes('L') && <span className='border border-gray-300 px-1 mx-1'>L</span>}
-//                       {Products[item].size.includes('XL') && <span className='border border-gray-300 px-1 mx-1'>XL</span>}
-//                       {Products[item].size.includes('XXL') && <span className='border border-gray-300 px-1 mx-1'>XXL</span>}
-//                     </div>
-//                     <div className="mt-1">
-//                       {Products[item].color.includes('Silver') && <button className="border-2 border-gray-300 ml-1 bg-black rounded-full w-6 h-6 focus:outline-none"></button>}
-//                       {Products[item].color.includes('Black') && <button className="border-2 border-gray-300 ml-1 bg-black rounded-full w-6 h-6 focus:outline-none"></button>}
-//                       {Products[item].color.includes('Red') && <button className="border-2 border-gray-300 ml-1 bg-red-700 rounded-full w-6 h-6 focus:outline-none"></button>}
-//                       {Products[item].color.includes('Blue') && <button className="border-2 border-gray-300 ml-1 bg-blue-600 rounded-full w-6 h-6 focus:outline-none"></button>}
-//                       {Products[item].color.includes('Nevy Blue') && <button className="border-2 border-gray-300 ml-1 bg-blue-950 rounded-full w-6 h-6 focus:outline-none"></button>}
-//                       {Products[item].color.includes('Green') && <button className="border-2 border-gray-300 ml-1 bg-green-700 rounded-full w-6 h-6 focus:outline-none"></button>}
-                      
-//                     </div>
-//                   </div></Link>
-//               </div>
-//             })}
-
-//           </div>
-//         </div>
-//       </section></div>
-//   )
-// }
-
-// export async function getServerSideProps(context) {
-//   if (!mongoose.connections[0].readyState) {
-//     await mongoose.connect(process.env.MONGO_URI)
-//   }
-//   let Products = await Product.find({ category: 'Earrings' })
-//   let Earrings = {}
-//   for (let item of Products) {
-//     if (item.title in Earrings) {
-//       if (!Earrings[item.title].color.includes(item.color) && item.availableQty > 0) {
-//         Earrings[item.title].color.push(item.color)
-//       }
-//       if (!Earrings[item.title].size.includes(item.size) && item.availableQty > 0) {
-//         Earrings[item.title].size.push(item.size)
-//       }
-//     }
-//     else {
-//       Earrings[item.title] = JSON.parse(JSON.stringify(item))
-//       if (item.availableQty > 0) {
-//         Earrings[item.title].color = [item.color]
-//         Earrings[item.title].size = [item.size]
-//       }
-//     }
-//   }
-
-//   return {
-//     props: { Products: JSON.parse(JSON.stringify(Earrings)) }, // will be passed to the page component as props
-//   }
-// }
-
-// export default Earrings
 
 
 import React from 'react'
@@ -89,7 +5,21 @@ import Link from 'next/link'
 import Product from "@/models/Product"
 import mongoose from "mongoose";
 
-const Earrings = ({ Products }) => {
+const Earrings = ({ Products, addToCart, buyNow  }) => {
+
+  const handleAddToCart = (Products, e) => {
+    e.stopPropagation();
+    if (addToCart) {
+      addToCart(Products._id, 1, Products.price, Products.title, Products.size || 'M', Products.variant || 'Default', Products.img);
+    }
+  };
+
+  const handleBuyNow = (Products, e) => {
+    e.stopPropagation();
+    if (buyNow) {
+      buyNow(Products._id, 1, Products.price, Products.title, Products.size || 'M', Products.variant || 'Default', Products.img);
+    }
+  };
   return (
      <div className='min-h-screen ' style={{
     background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
@@ -129,7 +59,22 @@ const Earrings = ({ Products }) => {
                     </div>
                   </div>
                 </Link>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => handleAddToCart(Products[item], e)}
+                    className="w-1/2 bg-[#CA7F60] hover:bg-[#935338] text-white  py-2 rounded-md text-sm font-medium transition-all"
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={(e) => handleBuyNow(Products[item], e)}
+                    className="w-1/2 bg-black hover:bg-gray-800 text-white py-2 rounded-md text-sm font-medium transition-all"
+                  >
+                    Buy Now
+                  </button>
+                </div>
               </div>
+              
             })}
 
           </div>

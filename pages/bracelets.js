@@ -5,11 +5,27 @@ import Link from 'next/link'
 import Product from "@/models/Product"
 import mongoose from "mongoose";
 
-const Bracelets = ({Bracelets }) => {
+
+const Bracelets = ({ Bracelets, addToCart, buyNow }) => {
+  
+
+  const handleAddToCart = (Bracelets, e) => {
+    e.stopPropagation();
+    if (addToCart) {
+      addToCart(Bracelets._id, 1, Bracelets.price, Bracelets.title, Bracelets.size || 'M', Bracelets.variant || 'Default', Bracelets.img);
+    }
+  };
+
+  const handleBuyNow = (Bracelets, e) => {
+    e.stopPropagation();
+    if (buyNow) {
+      buyNow(Bracelets._id, 1, Bracelets.price, Bracelets.title, Bracelets.size || 'M', Bracelets.variant || 'Default', Bracelets.img);
+    }
+  };
   return (
     <div className='min-h-screen ' style={{
-    background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
-  }} >
+      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
+    }} >
       <section className="text-gray-600 body-font">
         <div className="container px-5 py-24 mx-auto">
           <div className="flex flex-wrap -m-4 justify-center">
@@ -25,7 +41,7 @@ const Bracelets = ({Bracelets }) => {
                 <Link href={`/product/${Bracelets[item].slug}`}>
                   <div className="mt-4 text-left p-2 ">
                     <h3 className="text-gray-500 text-xs tracking-widest title-font mb-1">Bracelets</h3>
-                    <h2 className="text-gray-900 title-font text-lg font-medium mb-2">{Bracelets[item].title}</h2>
+                    <h2 className="text-gray-900 title-font text-base font-medium mb-2">{Bracelets[item].title}</h2>
                     <p className="mt-1 font-semibold text-gray-900">₹{Bracelets[item].price}</p>
                     <div className="mt-3">
                       {Bracelets[item].size.includes('Free') && <span className='border border-gray-400 bg-white px-3 py-1 mx-1 rounded text-sm'>Free</span>}
@@ -45,7 +61,23 @@ const Bracelets = ({Bracelets }) => {
                     </div>
                   </div>
                 </Link>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => handleAddToCart(Bracelets[item], e)}
+                    className="w-1/2 bg-[#CA7F60] hover:bg-[#935338] text-white  py-2 rounded-md text-sm font-medium transition-all"
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={(e) => handleBuyNow(Bracelets[item], e)}
+                    className="w-1/2 bg-black hover:bg-gray-800 text-white py-2 rounded-md text-sm font-medium transition-all"
+                  >
+                    Buy Now
+                  </button>
+                </div>
               </div>
+
             })}
 
           </div>

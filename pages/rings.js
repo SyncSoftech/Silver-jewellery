@@ -6,7 +6,21 @@ import mongoose from "mongoose";
 
 
 
-const Rings = ({ Products }) => {
+const Rings = ({ Products ,addToCart,buyNow}) => {
+
+  const handleAddToCart = (Products, e) => {
+    e.stopPropagation();
+    if (addToCart) {
+      addToCart(Products._id, 1, Products.price, Products.title, Products.size || 'M', Products.variant || 'Default', Products.img);
+    }
+  };
+
+  const handleBuyNow = (Products, e) => {
+    e.stopPropagation();
+    if (buyNow) {
+      buyNow(Products._id, 1, Products.price, Products.title, Products.size || 'M', Products.variant || 'Default', Products.img);
+    }
+  };
   return (
      <div className='min-h-screen ' style={{
     background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
@@ -46,6 +60,20 @@ const Rings = ({ Products }) => {
                     </div>
                   </div>
                 </Link>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => handleAddToCart(Products[item], e)}
+                    className="w-1/2 bg-[#CA7F60] hover:bg-[#935338] text-white  py-2 rounded-md text-sm font-medium transition-all"
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={(e) => handleBuyNow(Products[item], e)}
+                    className="w-1/2 bg-black hover:bg-gray-800 text-white py-2 rounded-md text-sm font-medium transition-all"
+                  >
+                    Buy Now
+                  </button>
+                </div>
               </div>
             })}
 
