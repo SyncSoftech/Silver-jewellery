@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
 const AdminSchema = new mongoose.Schema({
   name: String,
@@ -8,4 +8,4 @@ const AdminSchema = new mongoose.Schema({
   role: { type: String, default: "admin" },
 }, { timestamps: true });
 
-export default mongoose.models.Admin || mongoose.model("Admin", AdminSchema);
+module.exports = mongoose.models.Admin || mongoose.model("Admin", AdminSchema);

@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# createAdmin
+createAdmin.js
+
+# .env / .env.local / .env.local.example
+.env
+.env.local
+.env.local.example

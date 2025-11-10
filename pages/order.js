@@ -76,7 +76,7 @@ export default function OrderPage() {
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="flex justify-center gap-3">
             <button onClick={() => router.back()} className="px-4 py-2 rounded bg-gray-200">Go Back</button>
-            <Link href="/orders"><a className="px-4 py-2 rounded bg-indigo-600 text-white">My Orders</a></Link>
+            <Link href="/orders"className="px-4 py-2 rounded bg-indigo-600 text-white">My Orders</Link>
           </div>
         </div>
       </div>
@@ -137,9 +137,12 @@ export default function OrderPage() {
             <div className="flex flex-col">
               <span className="title-font font-medium text-2xl text-gray-900">Total: ₹{Number(order.amount).toLocaleString('en-IN')}</span>
               <div className="my-6">
-                <button className="flex mx-0 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded mr-3">
-                  Track Order
-                </button>
+                <Link
+  href={`/order/${order._id || order.id}/tracking`}
+  className="flex mx-0 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded mr-3"
+>
+  Track Order
+</Link>
                 <button onClick={() => router.back()} className="ml-2 px-4 py-2 rounded border">Back</button>
               </div>
             </div>
