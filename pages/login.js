@@ -1,20 +1,154 @@
+// import Link from 'next/link'
+// import React, { useEffect, useState } from 'react'
+// import { ToastContainer, toast } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+// import { useRouter } from 'next/router';
+
+// function Login() { 
+//     const router = useRouter()
+//     const [email, setEmail] = useState('')
+//     const [password, setPassword] = useState('')
+    
+//     useEffect(()=>{
+//         if(localStorage.getItem('token')){
+//             const redirect = router.query.redirect || '/';
+//             router.push(redirect);
+//         }
+//     },[router.query.redirect])
+
+//     const handleChange = (e) => {
+//         if (e.target.name == 'email') {
+//             setEmail(e.target.value)
+//         }
+//         else if (e.target.name == 'password') {
+//             setPassword(e.target.value)
+//         }
+//     }
+//     const handleSubmit = async (e) => {
+//         e.preventDefault()
+//         const data = { email, password }
+//         let res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/login`, {
+//             method: 'Post',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify(data)
+//         })
+//         let response = await res.json()
+//         console.log(response)
+//         setEmail('')
+//         setPassword('')
+//         if (response.success) {
+//             localStorage.setItem('token', response.token)
+//             const redirect = router.query.redirect || '/';
+//             toast.success('You are successfully logged in!', {
+//                 position: "top-left",
+//                 autoClose: 1000,
+//                 hideProgressBar: false,
+//                 closeOnClick: true,
+//                 pauseOnHover: true,
+//                 draggable: true,
+//                 progress: undefined,
+//                 theme: "light",
+//                 onClose: () => {
+//                     router.push(redirect);
+//                 }
+//             });
+//             setTimeout(() => {
+//                 router.push(process.env.NEXT_PUBLIC_HOST)
+
+//             }, 1000);
+//         } else {
+//             toast.error(response.error, {
+//                 position: "top-left",
+//                 autoClose: 3000,
+//                 hideProgressBar: false,
+//                 closeOnClick: true,
+//                 pauseOnHover: true,
+//                 draggable: true,
+//                 progress: undefined,
+//                 theme: "light",
+//             });
+
+//         }
+//     }
+//     return (
+//         <div>
+//             <ToastContainer
+//                 position="top-left"
+//                 autoClose={3000}
+//                 hideProgressBar={false}
+//                 newestOnTop={false}
+//                 closeOnClick
+//                 rtl={false}
+//                 pauseOnFocusLoss
+//                 draggable
+//                 pauseOnHover
+//                 theme="light"
+//             />
+//             <section className="bg-gray-50 dark:bg-gray-900">
+//                 <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+//                     <a href="#" className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
+//                         <img className="w-8 h-8 mr-2" src="/loginlogo.png" alt="logo" />
+
+//                     </a>
+//                     <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+//                         <div className="p-2 space-y-4 md:space-y-2  sm:p-8">
+//                             <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center">
+//                                 Sign in to your account
+//                             </h1>
+//                             <p className="text-sm font-light text-gray-500 dark:text-gray-400 text-center">
+//                                 Or <Link href={'/signup'}><span href="#" className="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</span></Link>
+//                             </p>
+//                             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6" method='POST'>
+//                                 <div>
+//                                     <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
+//                                     <input value={email} onChange={handleChange} type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Email address" required="" />
+//                                 </div>
+//                                 <div>
+//                                     <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+//                                     <input value={password} onChange={handleChange} type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+//                                 </div>
+//                                 <div className="flex items-center justify-between">
+//                                     <Link href={'/forgot'}><div href="#" className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</div></Link>
+//                                 </div>
+//                                 <button type="submit" className="w-full text-white bg-blue-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Sign in</button>
+
+//                             </form>
+//                         </div>
+//                     </div>
+//                 </div>
+//             </section></div>
+//     )
+// }
+
+// export default Login
+
+
+
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from 'next/router';
 
-function Login() { 
+function Login() {
     const router = useRouter()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    
-    useEffect(()=>{
-        if(localStorage.getItem('token')){
+    const [loading, setLoading] = useState(false)
+
+    // AbortController for cancelling previous fetch
+    const abortCtrlRef = useRef(null)
+    // request id to ensure only the latest response is applied
+    const requestIdRef = useRef(0)
+
+    useEffect(() => {
+        if (localStorage.getItem('token')) {
             const redirect = router.query.redirect || '/';
             router.push(redirect);
         }
-    },[router.query.redirect])
+    }, [router.query.redirect, router]);
 
     const handleChange = (e) => {
         if (e.target.name == 'email') {
@@ -24,54 +158,107 @@ function Login() {
             setPassword(e.target.value)
         }
     }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
+
+        // Abort any previous pending request
+        if (abortCtrlRef.current) {
+            try { abortCtrlRef.current.abort() } catch (err) { /* ignore */ }
+        }
+
+        // create new controller and increment requestId
+        const controller = new AbortController()
+        abortCtrlRef.current = controller
+        const thisRequestId = ++requestIdRef.current
+
+        setLoading(true)
         const data = { email, password }
-        let res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/login`, {
-            method: 'Post',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        let response = await res.json()
-        console.log(response)
-        setEmail('')
-        setPassword('')
-        if (response.success) {
-            localStorage.setItem('token', response.token)
-            const redirect = router.query.redirect || '/';
-            toast.success('You are successfully logged in!', {
-                position: "top-left",
-                autoClose: 1000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-                onClose: () => {
-                    router.push(redirect);
-                }
-            });
-            setTimeout(() => {
-                router.push(process.env.NEXT_PUBLIC_HOST)
 
-            }, 1000);
-        } else {
-            toast.error(response.error, {
-                position: "top-left",
-                autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-            });
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+                signal: controller.signal
+            })
 
+            // If this response is not for the latest request, ignore it
+            if (thisRequestId !== requestIdRef.current) return;
+
+            const response = await res.json()
+            console.log(response)
+
+            // clear inputs (only if latest)
+            setEmail('')
+            setPassword('')
+
+            if (response.success) {
+                localStorage.setItem('token', response.token)
+                const redirect = router.query.redirect || '/';
+
+                toast.success('You are successfully logged in!', {
+                    position: "top-left",
+                    autoClose: 1000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    onClose: () => {
+                        // ensure we're still the latest before redirecting
+                        if (thisRequestId === requestIdRef.current) {
+                            router.push(redirect);
+                        }
+                    }
+                });
+
+                // fallback redirect if toast onClose not invoked for some reason
+                setTimeout(() => {
+                    if (thisRequestId === requestIdRef.current) {
+                        router.push(process.env.NEXT_PUBLIC_HOST)
+                    }
+                }, 1000);
+            } else {
+                toast.error(response.error || 'Login failed', {
+                    position: "top-left",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                });
+            }
+        } catch (err) {
+            // If the request was aborted, don't show an error toast
+            if (err.name === 'AbortError') {
+                console.log('Previous request aborted')
+            } else {
+                console.error(err)
+                toast.error('Network error. Please try again.', {
+                    position: "top-left",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                });
+            }
+        } finally {
+            // Only clear loading if this was the latest request
+            if (thisRequestId === requestIdRef.current) {
+                setLoading(false)
+                // clear controller ref since done
+                abortCtrlRef.current = null
+            }
         }
     }
+
     return (
         <div>
             <ToastContainer
@@ -90,7 +277,6 @@ function Login() {
                 <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
                     <a href="#" className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
                         <img className="w-8 h-8 mr-2" src="/loginlogo.png" alt="logo" />
-
                     </a>
                     <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
                         <div className="p-2 space-y-4 md:space-y-2  sm:p-8">
@@ -98,27 +284,33 @@ function Login() {
                                 Sign in to your account
                             </h1>
                             <p className="text-sm font-light text-gray-500 dark:text-gray-400 text-center">
-                                Or <Link href={'/signup'}><span href="#" className="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</span></Link>
+                                Or <Link href={'/signup'}><span className="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</span></Link>
                             </p>
                             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6" method='POST'>
                                 <div>
                                     <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
-                                    <input value={email} onChange={handleChange} type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Email address" required="" />
+                                    <input value={email} onChange={handleChange} type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Email address" required />
                                 </div>
                                 <div>
                                     <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-                                    <input value={password} onChange={handleChange} type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                    <input value={password} onChange={handleChange} type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <Link href={'/forgot'}><div href="#" className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</div></Link>
+                                    <Link href={'/forgot'}><div className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</div></Link>
                                 </div>
-                                <button type="submit" className="w-full text-white bg-blue-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Sign in</button>
-
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className={`w-full text-white ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-primary-700'} focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800`}
+                                >
+                                    {loading ? 'Signing in...' : 'Sign in'}
+                                </button>
                             </form>
                         </div>
                     </div>
                 </div>
-            </section></div>
+            </section>
+        </div>
     )
 }
 
