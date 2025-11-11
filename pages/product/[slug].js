@@ -374,7 +374,7 @@
 
 
 
-//pages/product/[slug].js
+// pages/product/[slug].js
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import mongoose from 'mongoose'
@@ -382,6 +382,7 @@ import Product from '@/models/Product'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { PiShareFatLight } from "react-icons/pi";
 
 const Post = ({ buyNow, addToCart, product, variants, wishlist = {}, addToWishlist, removeFromWishlist, addToRecentlyViewed }) => {
   console.log(product, variants)
@@ -460,6 +461,32 @@ const Post = ({ buyNow, addToCart, product, variants, wishlist = {}, addToWishli
 
   const isInWishlist = product._id in wishlist;
 
+  // Share handler: use Web Share API if available, otherwise copy link to clipboard
+  const handleShare = async () => {
+    const shareData = {
+      title: product.title,
+      text: `Check out this product: ${product.title} (${product.size}/${product.color})`,
+      url: typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_HOST}/product/${slug}`
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        // No toast usually necessary, but nice to confirm
+        toast.success('Thanks for sharing!', { position: 'bottom-center', autoClose: 1000 })
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareData.url)
+        toast.success('Product link copied to clipboard!', { position: 'bottom-center', autoClose: 1000 })
+      } else {
+        // Fallback: prompt with the URL so user can copy
+        window.prompt('Copy this link to share:', shareData.url)
+      }
+    } catch (err) {
+      console.error('Share failed:', err)
+      toast.error('Could not share the product. Try copying the link manually.', { position: 'bottom-center', autoClose: 1500 })
+    }
+  }
+
   return (
     <>
       <section className="text-gray-600 body-font overflow-hidden">
@@ -470,17 +497,30 @@ const Post = ({ buyNow, addToCart, product, variants, wishlist = {}, addToWishli
               <img alt="ecommerce" className="lg:h-auto px-24 object-cover object-top rounded" src={product.img} />
               
               {/* Wishlist Heart Icon */}
-              <button
-                onClick={handleWishlistToggle}
-                className="absolute top-8 right-28 bg-white hover:bg-gray-100 p-3 rounded-full shadow-lg transition-all duration-200 z-10"
-                title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-              >
-                {isInWishlist ? (
-                  <AiFillHeart className="text-red-500 text-2xl" />
-                ) : (
-                  <AiOutlineHeart className="text-gray-600 hover:text-red-500 text-2xl" />
-                )}
-              </button>
+              <div className="absolute top-8 right-28 flex space-x-3 z-10">
+                <button
+                  onClick={handleWishlistToggle}
+                  className="bg-white hover:bg-gray-100 p-3 rounded-full shadow-lg transition-all duration-200"
+                  title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  {isInWishlist ? (
+                    <AiFillHeart className="text-red-500 text-2xl" />
+                  ) : (
+                    <AiOutlineHeart className="text-gray-600 hover:text-red-500 text-2xl" />
+                  )}
+                </button>
+
+                {/* Share Icon Button */}
+                <button
+                  onClick={handleShare}
+                  className="bg-white hover:bg-gray-100 p-3 rounded-full shadow-lg transition-all duration-200"
+                  title="Share product"
+                  aria-label="Share product"
+                >
+                  <PiShareFatLight className="text-gray-700 text-2xl" />
+                </button>
+              </div>
             </div>
 
             <div className="lg:w-1/2 w-full lg:pl-10 lg:py-6 mt-6 lg:mt-0">
