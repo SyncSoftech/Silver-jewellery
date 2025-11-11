@@ -104,7 +104,8 @@ import Hero from '../components/Hero'
 import NewProducts from '../components/products'
 import Image from "next/image";
 import { Inter } from 'next/font/google'
-import { useEffect, useState } from 'react';
+import RecentlyViewed from '@/components/RecentlyViewed'
+
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -119,7 +120,8 @@ export default function Home({
   addToWishlist,
   removeFromWishlist,
   clearWishlist,
-  moveToCart
+  moveToCart,
+  recentlyViewed,
 }) {
 
 
@@ -155,7 +157,13 @@ export default function Home({
       </Head>
     
      <Hero/>
-
+<RecentlyViewed 
+  recentlyViewed={recentlyViewed}
+  addToCart={addToCart}
+  wishlist={wishlist}
+  addToWishlist={addToWishlist}
+  removeFromWishlist={removeFromWishlist}
+/>
    
 <div >
   
