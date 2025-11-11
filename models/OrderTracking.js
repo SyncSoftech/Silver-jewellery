@@ -25,7 +25,7 @@ const TrackingEventSchema = new mongoose.Schema({
     required: true,
     trim: true,
     lowercase: true,
-    enum: ['pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded', 'paid', 'failed', 'other'],
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'paid', 'failed', 'other'],
     default: 'pending'
   },
 
