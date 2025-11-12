@@ -316,10 +316,11 @@ export default function NewProducts({
           const isInWishlist = product._id in wishlist;
           
           return (
-            <div
-              key={i}
-              className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2"
-            >
+           <div
+  key={i}
+  onClick={() => router.push(`/product/${product.slug}`)}
+  className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer"
+>
               {/* Sparkle effect on hover */}
               <div className="absolute top-4 right-4 w-2 h-2 bg-rose-400 rounded-full opacity-0 group-hover:opacity-100 animate-ping z-30"></div>
               <div className="absolute top-6 right-8 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 animate-ping delay-75 z-30"></div>
