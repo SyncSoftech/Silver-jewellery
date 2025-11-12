@@ -1,6 +1,7 @@
 // pages/api/admin/products/[id].js
 import connectDb from '../../../../middleware/mongoose';
 import Product from '../../../../models/Product';
+import { increaseStock } from '../../../../utils/inventory';
 
 const makeSlug = (text = '') =>
   String(text)
@@ -37,28 +38,91 @@ const handler = async (req, res) => {
     try {
       const {
         name,
+        title,
         description,
+        desc,
         price,
         category,
         countInStock,
+        availableQty,
         image,
-        slug
+        img,
+        slug,
+        size,
+        color,
+        addStock
       } = req.body;
 
       const product = await Product.findById(id);
       if (!product) return res.status(404).json({ error: 'Product not found' });
 
-      // write back to your DB schema fields
-      product.title = name ?? product.title;
-      product.slug = slug ?? makeSlug(name ?? product.title);
-      product.desc = description ?? product.desc;
-      product.img = image ?? product.img;
-      product.category = category ?? product.category;
-      product.price = typeof price !== 'undefined' ? parseFloat(price) : product.price;
-      product.availableQty = typeof countInStock !== 'undefined' ? parseInt(countInStock, 10) : product.availableQty;
+      // Handle stock addition atomically (admin adding stock)
+      if (typeof addStock !== 'undefined' && addStock > 0) {
+        const stockResult = await increaseStock(id, addStock);
+        if (!stockResult.success) {
+          return res.status(400).json({ error: stockResult.error || 'Failed to add stock' });
+        }
+        // Fetch updated product after stock increase
+        const updatedProduct = await Product.findById(id);
+        return res.status(200).json({
+          success: true,
+          product: normalizeProduct(updatedProduct),
+          stockAdded: addStock,
+          message: 'Stock added successfully'
+        });
+      }
+
+      // Regular product update (non-stock fields)
+      // Accept both 'name' and 'title' field names
+      if (name || title) {
+        product.title = (name || title).trim();
+        product.slug = slug ?? makeSlug(name || title);
+      }
+      
+      // Accept both 'description' and 'desc' field names
+      if (description || desc) {
+        product.desc = (description || desc).trim();
+      }
+      
+      // Accept both 'image' and 'img' field names
+      if (image || img) {
+        product.img = (image || img).trim();
+      }
+      
+      if (category) {
+        product.category = category.trim();
+      }
+      
+      if (typeof price !== 'undefined' && price !== null) {
+        product.price = parseFloat(price);
+      }
+      
+      // Accept both 'countInStock' and 'availableQty' field names
+      // When updating product, ADD to existing stock instead of replacing it
+      if ((typeof countInStock !== 'undefined' || typeof availableQty !== 'undefined') && typeof addStock === 'undefined') {
+        const newQty = parseInt(countInStock ?? availableQty, 10);
+        // Ensure non-negative stock
+        if (!isNaN(newQty)) {
+          // ADD the new quantity to existing stock instead of replacing it
+          const currentStock = product.availableQty || 0;
+          product.availableQty = Math.max(0, currentStock + newQty);
+        }
+      }
+      
+      // Update optional fields
+      if (size) {
+        product.size = size.trim();
+      }
+      if (color) {
+        product.color = color.trim();
+      }
 
       const updated = await product.save();
-      return res.status(200).json(normalizeProduct(updated));
+      return res.status(200).json({
+        success: true,
+        product: normalizeProduct(updated),
+        message: 'Product updated successfully'
+      });
     } catch (error) {
       console.error('Error updating product:', error);
       return res.status(500).json({ error: 'Error updating product' });

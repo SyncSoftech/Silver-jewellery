@@ -101,7 +101,85 @@ const handler = async (req, res) => {
     }
   }
 
-  res.setHeader('Allow', ['GET', 'POST']);
+  if (req.method === 'PUT') {
+    try {
+      const { title, desc, img, category, size, color, price, availableQty, productId, addStock } = req.body;
+
+      // Check if this is a stock-only update (addStock mode)
+      if (addStock !== undefined && addStock !== null) {
+        if (!productId) {
+          return res.status(400).json({ success: false, error: 'Product ID is required for stock update' });
+        }
+
+        const qtyToAdd = parseInt(addStock, 10);
+        if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
+          return res.status(400).json({ success: false, error: 'Stock quantity must be greater than 0' });
+        }
+
+        // Atomically increase stock
+        const updatedProduct = await Product.findByIdAndUpdate(
+          productId,
+          { $inc: { availableQty: qtyToAdd } },
+          { new: true, runValidators: false }
+        );
+
+        if (!updatedProduct) {
+          return res.status(404).json({ success: false, error: 'Product not found' });
+        }
+
+        return res.status(200).json({
+          success: true,
+          product: normalizeProduct(updatedProduct),
+          message: `Stock increased by ${qtyToAdd}`,
+          stockAdded: qtyToAdd,
+          newStock: updatedProduct.availableQty
+        });
+      }
+
+      // Otherwise, this is a full product update from admin panel
+      // Validate required fields
+      const errors = {};
+      if (!title || !String(title).trim()) errors.title = 'Title is required';
+      if (!desc || !String(desc).trim()) errors.desc = 'Description is required';
+      if (!img || !String(img).trim()) errors.img = 'Image URL is required';
+      if (!category || !String(category).trim()) errors.category = 'Category is required';
+      if (price === undefined || price === null || Number.isNaN(Number(price)) || Number(price) <= 0) {
+        errors.price = 'Valid price is required';
+      }
+      if (availableQty === undefined || availableQty === null || Number.isNaN(parseInt(availableQty, 10)) || parseInt(availableQty, 10) < 0) {
+        errors.availableQty = 'Valid available quantity is required';
+      }
+
+      if (Object.keys(errors).length) {
+        return res.status(400).json({ success: false, errors });
+      }
+
+      const updateData = {
+        title: String(title).trim(),
+        desc: String(desc).trim(),
+        img: String(img).trim(),
+        category: String(category).trim(),
+        price: Number(price),
+        availableQty: parseInt(availableQty, 10)
+      };
+
+      // Add optional fields if provided
+      if (size) updateData.size = String(size).trim();
+      if (color) updateData.color = String(color).trim();
+
+      // This endpoint doesn't handle product ID in URL, so we can't update by ID
+      // The admin panel should use /api/admin/products/[id] for updates
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Use PUT /api/admin/products/[id] to update existing products' 
+      });
+    } catch (error) {
+      console.error('Error in PUT /api/admin/products:', error);
+      return res.status(500).json({ success: false, error: 'Error processing request' });
+    }
+  }
+
+  res.setHeader('Allow', ['GET', 'POST', 'PUT']);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 };
 

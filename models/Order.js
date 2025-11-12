@@ -31,7 +31,7 @@ const PaymentInfoSchema = new mongoose.Schema({
 
 const OrderSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
-  orderNumber: { type: String, unique: true, sparse: true },
+  orderNumber: { type: String, sparse: true },
   orderItems: {
     type: [OrderItemSchema],
     required: true,
@@ -65,11 +65,7 @@ try {
   // Primary useful indexes
   OrderSchema.index({ userId: 1, status: 1 });
   OrderSchema.index({ createdAt: -1 });
-
-  // optional index; guard because in some environments index creation can trigger odd errors
-  if (typeof OrderSchema.index === 'function') {
-    OrderSchema.index({ orderNumber: 1 });
-  }
+  // orderNumber index removed - using sparse field instead to avoid duplicate index warning
 } catch (err) {
   // If index creation fails during module load, don't crash the app — log for debugging
   // In production you'll want to surface/fix this, but in dev HMR can cause repeated index registration

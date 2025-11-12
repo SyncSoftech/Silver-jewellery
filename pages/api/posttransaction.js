@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import connectDB from '../../middleware/mongoose';
 import Order from '../../models/Order';
 import { verifyToken } from '../../utils/jwt';
+import { decreaseStock, revertStockDecrease } from '../../utils/inventory';
 
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
@@ -47,6 +48,23 @@ const handler = async (req, res) => {
       return res.status(403).json({ success: false, error: 'Forbidden: you do not own this order' });
     }
 
+    // Atomically decrease stock for all order items
+    const cartItems = order.orderItems.map(item => ({
+      productId: item.product,
+      qty: item.quantity
+    }));
+
+    const stockDecreaseResult = await decreaseStock(cartItems);
+    
+    if (!stockDecreaseResult.success) {
+      console.error('Stock decrease failed:', stockDecreaseResult.failed);
+      return res.status(409).json({
+        success: false,
+        error: 'Failed to reserve stock for order',
+        stockErrors: stockDecreaseResult.failed
+      });
+    }
+
     // update order as paid
     order.status = 'Paid';
     order.paymentInfo = {
@@ -57,7 +75,20 @@ const handler = async (req, res) => {
     };
     await order.save();
 
-    return res.status(200).json({ success: true, order });
+    // Emit real-time inventory update via Socket.io
+    try {
+      // This will be handled by the server-side socket handler
+      // For now, we'll log the update
+      console.log('Stock decreased for order:', dbOrderId, 'Updated items:', stockDecreaseResult.updated);
+    } catch (socketErr) {
+      console.warn('Socket.io notification failed (non-critical):', socketErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      order,
+      stockUpdates: stockDecreaseResult.updated
+    });
   } catch (err) {
     console.error('posttransaction error:', err);
     return res.status(500).json({ success: false, error: 'Server error' });

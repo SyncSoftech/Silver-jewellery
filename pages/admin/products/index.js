@@ -538,10 +538,18 @@ const handleImageUpload = async (e) => {
   if (!formData.title.trim()) { alert('Please enter product title'); return; }
   if (!formData.desc.trim()) { alert('Please enter product description'); return; }
   if (!formData.img.trim()) { alert('Please upload or paste an image URL'); return; }
-  // ... price/qty checks
+  if (!formData.price || Number(formData.price) <= 0) { alert('Please enter a valid price'); return; }
+  if (formData.availableQty === '' || parseInt(formData.availableQty, 10) < 0) { alert('Please enter a valid quantity'); return; }
+  
   try {
     const token = localStorage.getItem('adminToken');
-    const res = await fetch('/api/admin/products', {
+    
+    // Use different endpoints for POST (create) vs PUT (update)
+    const url = currentProduct 
+      ? `/api/admin/products/${currentProduct._id}` 
+      : '/api/admin/products';
+    
+    const res = await fetch(url, {
       method: currentProduct ? 'PUT' : 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -566,12 +574,23 @@ const handleImageUpload = async (e) => {
         const firstErr = Object.values(data.errors)[0];
         alert(firstErr || 'Validation error');
       } else {
-        alert(data.message || 'Failed to save product');
+        alert(data.error || data.message || 'Failed to save product');
       }
+      console.error('API Error:', data);
       return;
     }
-alert('Product saved successfully!');
-    // success handling...
+    
+    alert('Product saved successfully!');
+    
+    // Update local state
+    if (currentProduct) {
+      setProducts(products.map(p => p._id === currentProduct._id ? data.product || data : p));
+    } else {
+      setProducts([...products, data.product || data]);
+    }
+    
+    setShowAddModal(false);
+    resetForm();
   } catch (err) {
     console.error('Error saving product:', err);
     alert('Failed to save product. See console for details.');

@@ -348,7 +348,7 @@ const Necklaces = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, 
               return (
                 <div
                   key={product._id || key}
-                  className="lg:w-1/5 md:w-1/2 w-1/2 p-2 sm:p-4 cursor-pointer"
+                  className="lg:w-1/5 md:w-1/2 w-1/2 p-1 lg:p-4  cursor-pointer"
                 >
                   {/* Card is NOT wrapped by Link anymore */}
                   <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer border border-gray-100">
@@ -392,7 +392,7 @@ const Necklaces = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, 
                           <button
                             type="button"
                             onClick={(e) => handleAddToCart(product, e)}
-                            className="flex-1 bg-white backdrop-blur-sm hover:bg-rose-50 text-gray-800 py-2.5 rounded-xl text-xs font-semibold transition-all duration-300 shadow-md"
+                            className="flex-1 bg-white backdrop-blur-sm hover:bg-rose-50 text-gray-800 py-2.5 rounded-xl text-xs lg:font-semibold transition-all duration-300 shadow-md"
                           >
                             Add to Cart
                           </button>
@@ -411,7 +411,7 @@ const Necklaces = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, 
                     <div className="p-4 flex flex-col flex-grow bg-white relative">
                       <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-br from-rose-50 to-transparent rounded-bl-3xl opacity-40 pointer-events-none"></div>
 
-                      <h3 className="text-rose-400 text-xs tracking-[0.2em] uppercase font-light mb-2">NECKLACES</h3>
+                      <h3 className="text-rose-400 text-xs tracking-[0.2em] uppercase font-light lg:mb-2">NECKLACES</h3>
 
                       {/* Only the title links to the product page */}
                       <Link href={`/product/${product.slug}`} className="group">
@@ -421,7 +421,7 @@ const Necklaces = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, 
                       </Link>
 
                       <div className="mt-auto">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between ">
                           <div className="flex items-baseline gap-2">
                             <span className="text-slate-800 font-bold text-xl">₹{product.price}</span>
                             {product.oldPrice && (

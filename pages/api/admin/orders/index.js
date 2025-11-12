@@ -52,6 +52,13 @@ const handler = async (req, res) => {
             total: typeof o.amount === 'number' ? o.amount : (o.total || 0),
             // deliver a canonical lowercase status
             status: normalizeStatus(o.status),
+            // include payment info
+            isPaid: o.isPaid || false,
+            paymentMethod: o.paymentMethod || 'Unknown',
+            paymentInfo: o.paymentInfo ? {
+              status: o.paymentInfo.status || 'unpaid',
+              method: o.paymentInfo.method || o.paymentMethod || 'Unknown'
+            } : { status: 'unpaid', method: o.paymentMethod || 'Unknown' },
             raw: undefined
           };
         })
