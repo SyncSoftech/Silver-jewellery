@@ -233,6 +233,7 @@ import NewProducts from '../components/products'
 import Image from "next/image";
 import { Inter } from 'next/font/google'
 import RecentlyViewed from '@/components/RecentlyViewed'
+import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -255,22 +256,22 @@ export default function Home({
     {
       title: "BRACELETS",
       img: "/Bracelets.png",
-      link: "#",
+      link: "/bracelets",
     },
     {
       title: "EARRINGS",
       img: "/Earrings.png",
-      link: "#",
+      link: "/earrings",
     },
     {
       title: "NECKLACES",
       img: "/Necklaces.png",
-      link: "#",
+      link: "/necklaces",
     },
     {
       title: "RINGS",
       img: "/Rings.png",
-      link: "#",
+      link: "/rings",
     },
   ];
 
@@ -322,6 +323,10 @@ export default function Home({
                 key={i} 
                 className="group relative"
               >
+                <Link
+                  href={item.link}
+                  className="inline-flex items-center gap-2 text-slate-600 hover:text-rose-600 text-sm font-medium tracking-wide transition-all duration-300 group/link"
+                >
                 <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
                   {/* Gradient Overlay on Hover */}
                   <div className="absolute inset-0 bg-gradient-to-t from-rose-100/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
@@ -349,10 +354,6 @@ export default function Home({
 
                     <div className="h-px w-16 bg-gradient-to-r from-transparent via-rose-400 to-transparent mx-auto mb-4"></div>
 
-                    <a
-                      href={item.link}
-                      className="inline-flex items-center gap-2 text-slate-600 hover:text-rose-600 text-sm font-medium tracking-wide transition-all duration-300 group/link"
-                    >
                       <span className="relative">
                         Explore Collection
                         <span className="absolute bottom-0 left-0 w-0 h-px bg-rose-400 group-hover/link:w-full transition-all duration-300"></span>
@@ -360,9 +361,9 @@ export default function Home({
                       <svg className="w-4 h-4 transform group-hover/link:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    </a>
                   </div>
                 </div>
+            </Link>
               </div>
             ))}
           </div>
