@@ -292,7 +292,9 @@ export default function NewProducts({
   };
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
+    <section className="py-20  relative overflow-hidden" style={{
+      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
+    }}>
       {/* Minimal Decorative Elements */}
       <div className="absolute top-20 right-10 w-64 h-64 bg-pink-100/30 rounded-full filter blur-3xl"></div>
       <div className="absolute bottom-20 left-10 w-64 h-64 bg-purple-100/30 rounded-full filter blur-3xl"></div>
@@ -331,7 +333,7 @@ export default function NewProducts({
                 {/* Wishlist Heart Icon */}
                 <button
                   onClick={(e) => handleWishlistToggle(product, e)}
-                  className="absolute left-3 top-3 bg-white/95 backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-md transition-all duration-300 z-20 hover:scale-110 group/heart"
+                  className="absolute left-3 top-3 bg-white backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-md transition-all duration-300 z-20 hover:scale-110 group/heart"
                   title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
                 >
                   {isInWishlist ? (
@@ -353,13 +355,13 @@ export default function NewProducts({
                   <div className="flex gap-2">
                     <button
                       onClick={(e) => handleAddToCart(product, e)}
-                      className="flex-1 bg-white/95 backdrop-blur-sm hover:bg-white text-gray-800 py-2.5 rounded-xl text-xs font-semibold transition-all duration-300 shadow-md"
+                      className="flex-1 bg-white backdrop-blur-sm hover:bg-[#EEDDD9] text-gray-800 py-2.5 rounded-xl text-xs font-semibold transition-all duration-300 shadow-md"
                     >
                       Add to Cart
                     </button>
                     <button
                       onClick={(e) => handleBuyNow(product, e)}
-                      className="flex-1 bg-[#CA7F60] hover:bg-[#935338] text-white py-2.5 rounded-xl text-xs font-semibold transition-all duration-300 shadow-md"
+                      className="flex-1 bg-white hover:bg-black hover:text-white py-2.5 rounded-xl text-xs font-semibold transition-all duration-300 shadow-md"
                     >
                       Buy Now
                     </button>

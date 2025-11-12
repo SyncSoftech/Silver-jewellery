@@ -41,7 +41,9 @@ const RecentlyViewed = ({
   }
 
   return (
-    <section className="py-16 bg-gradient-to-b from-pink-50 via-white to-purple-50 relative overflow-hidden">
+    <section className="py-16  relative overflow-hidden" style={{
+      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
+    }}>
       {/* Decorative background elements */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-pink-200 rounded-full blur-3xl"></div>
@@ -51,10 +53,10 @@ const RecentlyViewed = ({
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-12">
           <div className="inline-block">
-            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#CA7F60] via-pink-500 to-purple-500 bg-clip-text text-transparent mb-2">
+            <h2 className="text-3xl md:text-4xl font-bold text-[# mb-2">
               Recently Viewed
             </h2>
-            <div className="h-1 w-24 bg-gradient-to-r from-[#CA7F60] to-purple-400 mx-auto rounded-full"></div>
+ 
           </div>
           <p className="text-gray-600 mt-4 text-lg">Rediscover your favorites</p>
         </div>

@@ -634,7 +634,7 @@ export default function GoldEarringsHero() {
     {
       title: "Gold Earrings For Women",
       image:
-        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=1600&q=80",
+        "/hero1.png",
       subtitle: "Explore Jewelry Wholesale & Online Marketplace",
     },
     {
@@ -646,7 +646,7 @@ export default function GoldEarringsHero() {
     {
       title: "Premium Gold Jewelry",
       image:
-        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1600&q=80",
+        "/hero2.jpg",
       subtitle: "Timeless Designs That Shine Forever",
     },
   ];
@@ -691,6 +691,7 @@ export default function GoldEarringsHero() {
                   backgroundRepeat: "no-repeat",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
+
                 }}
                 aria-hidden={!visible}
               >
