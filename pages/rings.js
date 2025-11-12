@@ -406,11 +406,11 @@ const Rings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, remo
                     <div className="p-4 flex flex-col flex-grow bg-white relative">
                       <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-br from-rose-50 to-transparent rounded-bl-3xl opacity-40 pointer-events-none"></div>
 
-                      <h3 className="text-rose-400 text-xs tracking-[0.2em] uppercase font-light mb-2">Bracelets</h3>
+                      <h3 className="text-rose-400 text-xs tracking-[0.2em] uppercase font-light mb-2">RINGS</h3>
 
                       {/* Only the title links to the product page */}
                       <Link href={`/product/${product.slug}`} className="group">
-                        <h2 className="text-slate-800 font-serif sm:text-xs lg:text-base font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
+                        <h2 className="text-slate-800 font-serif sm:text-xs sm:font-light lg:text-base lg:font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
                           {product.title}
                         </h2>
                       </Link>

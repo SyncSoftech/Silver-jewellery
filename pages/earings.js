@@ -1,5 +1,3 @@
-
-
 // import React from 'react'
 // import Link from 'next/link'
 // import Product from "@/models/Product"
@@ -74,7 +72,7 @@
 //                   </button>
 //                 </div>
 //               </div>
-              
+
 //             })}
 
 //           </div>
@@ -115,8 +113,6 @@
 
 // export default Earrings
 
-
-
 // import React from 'react'
 // import Link from 'next/link'
 // import Product from "@/models/Product"
@@ -142,7 +138,7 @@
 //   const handleWishlistToggle = (product, e) => {
 //     e.stopPropagation();
 //     const isInWishlist = product._id in wishlist;
-    
+
 //     if (isInWishlist) {
 //       if (removeFromWishlist) {
 //         removeFromWishlist(product._id);
@@ -166,7 +162,7 @@
 //               const isInWishlist = Products[item]._id in wishlist;
 
 //               return <div passHref={true} key={Products[item]._id} className="lg:w-1/5 md:w-1/2 p-2 w-full cursor-pointer shadow-lg m-5 bg-white overflow-hidden relative" >
-                
+
 //                 {/* Wishlist Heart Icon */}
 //                 <button
 //                   onClick={(e) => handleWishlistToggle(Products[item], e)}
@@ -223,7 +219,7 @@
 //                   </button>
 //                 </div>
 //               </div>
-              
+
 //             })}
 
 //           </div>
@@ -264,20 +260,35 @@
 
 // export default Earrings
 
-import React from 'react'
-import Link from 'next/link'
-import Product from "@/models/Product"
+import React from "react";
+import Link from "next/link";
+import Product from "@/models/Product";
 import mongoose from "mongoose";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 
-const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, removeFromWishlist }) => {
+const Earrings = ({
+  Products,
+  addToCart,
+  buyNow,
+  wishlist = {},
+  addToWishlist,
+  removeFromWishlist,
+}) => {
   const productMap = Products || {};
 
   const handleAddToCart = (product, e) => {
     e.preventDefault();
     e.stopPropagation();
     if (addToCart) {
-      addToCart(product._id, 1, product.price, product.title, product.size || 'M', product.variant || 'Default', product.img);
+      addToCart(
+        product._id,
+        1,
+        product.price,
+        product.title,
+        product.size || "M",
+        product.variant || "Default",
+        product.img
+      );
     }
   };
 
@@ -285,7 +296,15 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
     e.preventDefault();
     e.stopPropagation();
     if (buyNow) {
-      buyNow(product._id, 1, product.price, product.title, product.size || 'M', product.variant || 'Default', product.img);
+      buyNow(
+        product._id,
+        1,
+        product.price,
+        product.title,
+        product.size || "M",
+        product.variant || "Default",
+        product.img
+      );
     }
   };
 
@@ -300,15 +319,25 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
       }
     } else {
       if (addToWishlist) {
-        addToWishlist(product._id, product.price, product.title, product.size || 'M', product.variant || 'Default', product.img);
+        addToWishlist(
+          product._id,
+          product.price,
+          product.title,
+          product.size || "M",
+          product.variant || "Default",
+          product.img
+        );
       }
     }
   };
 
   return (
-    <div className='min-h-screen  relative overflow-hidden' style={{
-      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
-    }}>
+    <div
+      className="min-h-screen  relative overflow-hidden"
+      style={{
+        background: "radial-gradient(circle, #FFF2Ef,#E0CAC5)",
+      }}
+    >
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-rose-200 rounded-full filter blur-3xl opacity-20 animate-pulse"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-200 rounded-full filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
@@ -318,8 +347,12 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
         <div className="container px-5 py-20 mx-auto">
           {/* Page Header (unchanged) */}
           <div className="text-center mb-16">
-            <p className="text-rose-400 text-sm tracking-[0.3em] font-light mb-3 uppercase">Exquisite Collection</p>
-            <h1 className="text-5xl md:text-6xl font-serif text-slate-800 mb-4 tracking-tight">Earrings</h1>
+            <p className="text-rose-400 text-sm tracking-[0.3em] font-light mb-3 uppercase">
+              Exquisite Collection
+            </p>
+            <h1 className="text-5xl md:text-6xl font-serif text-slate-800 mb-4 tracking-tight">
+              Earrings
+            </h1>
             <div className="flex justify-center items-center gap-3 mt-4">
               <div className="h-px w-16 bg-gradient-to-r from-transparent to-rose-300"></div>
               <div className="flex gap-1.5">
@@ -330,7 +363,8 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
               <div className="h-px w-16 bg-gradient-to-l from-transparent to-rose-300"></div>
             </div>
             <p className="text-slate-600 mt-6 max-w-2xl mx-auto text-lg">
-              Discover our handcrafted silver earrings, each piece designed to add elegance to your style
+              Discover our handcrafted silver earrings, each piece designed to
+              add elegance to your style
             </p>
           </div>
 
@@ -340,8 +374,18 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
               const product = productMap[key];
               if (!product) return null;
 
-              const sizes = Array.isArray(product.size) ? product.size.filter(s => s !== null && s !== undefined && String(s).trim() !== '') : [];
-              const colors = Array.isArray(product.color) ? product.color.filter(c => c !== null && c !== undefined && String(c).trim() !== '') : [];
+              const sizes = Array.isArray(product.size)
+                ? product.size.filter(
+                    (s) =>
+                      s !== null && s !== undefined && String(s).trim() !== ""
+                  )
+                : [];
+              const colors = Array.isArray(product.color)
+                ? product.color.filter(
+                    (c) =>
+                      c !== null && c !== undefined && String(c).trim() !== ""
+                  )
+                : [];
 
               const isInWishlist = product._id in wishlist;
 
@@ -352,7 +396,6 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
                 >
                   {/* Card is NOT wrapped by Link anymore */}
                   <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer border border-gray-100">
-                    
                     {/* Image area: Link only wraps the image */}
                     <div className="relative w-full aspect-square bg-white overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
@@ -368,7 +411,11 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
                         type="button"
                         onClick={(e) => handleWishlistToggle(product, e)}
                         className="absolute left-3 top-3 bg-white/90 backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-md transition-all duration-300 z-20 hover:scale-110"
-                        title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                        title={
+                          isInWishlist
+                            ? "Remove from wishlist"
+                            : "Add to wishlist"
+                        }
                       >
                         {isInWishlist ? (
                           <AiFillHeart className="text-rose-500 text-xl animate-pulse" />
@@ -378,7 +425,10 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
                       </button>
 
                       {/* Link only for the image */}
-                      <Link href={`/product/${product.slug}`} className="block absolute inset-0">
+                      <Link
+                        href={`/product/${product.slug}`}
+                        className="block absolute inset-0"
+                      >
                         <img
                           alt={product.title}
                           src={product.img}
@@ -411,11 +461,13 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
                     <div className="p-4 flex flex-col flex-grow bg-white relative">
                       <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-br from-rose-50 to-transparent rounded-bl-3xl opacity-40 pointer-events-none"></div>
 
-                      <h3 className="text-rose-400 text-xs tracking-[0.2em] uppercase font-light mb-2">Bracelets</h3>
+                      <h3 className="text-rose-400 text-xs tracking-[0.2em] uppercase font-light mb-2">
+                        EARRINGS
+                      </h3>
 
                       {/* Only the title links to the product page */}
                       <Link href={`/product/${product.slug}`} className="group">
-                        <h2 className="text-slate-800 font-serif sm:text-xs lg:text-base font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
+                        <h2 className="text-slate-800 font-serif sm:text-xs sm:font-light lg:text-base lg:font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
                           {product.title}
                         </h2>
                       </Link>
@@ -423,47 +475,98 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
                       <div className="mt-auto">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-slate-800 font-bold text-xl">₹{product.price}</span>
+                            <span className="text-slate-800 font-bold text-xl">
+                              ₹{product.price}
+                            </span>
                             {product.oldPrice && (
-                              <span className="text-slate-400 line-through text-xs">₹{product.oldPrice}</span>
+                              <span className="text-slate-400 line-through text-xs">
+                                ₹{product.oldPrice}
+                              </span>
                             )}
                           </div>
                           {product.oldPrice && (
                             <span className="text-rose-500 text-xs font-semibold">
-                              {Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}% OFF
+                              {Math.round(
+                                ((product.oldPrice - product.price) /
+                                  product.oldPrice) *
+                                  100
+                              )}
+                              % OFF
                             </span>
                           )}
                         </div>
 
                         {/* Sizes */}
-                        {Array.isArray(product.size) && product.size.filter(Boolean).length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Available Sizes</p>
-                            <div className="flex flex-wrap gap-2">
-                              {product.size.includes('Free') && (<span className='...'>Free</span>)}
-                              {product.size.includes('S') && (<span className='...'>S</span>)}
-                              {product.size.includes('M') && (<span className='...'>M</span>)}
-                              {product.size.includes('L') && (<span className='...'>L</span>)}
-                              {product.size.includes('XL') && (<span className='...'>XL</span>)}
-                              {product.size.includes('XXL') && (<span className='...'>XXL</span>)}
+                        {Array.isArray(product.size) &&
+                          product.size.filter(Boolean).length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">
+                                Available Sizes
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {product.size.includes("Free") && (
+                                  <span className="...">Free</span>
+                                )}
+                                {product.size.includes("S") && (
+                                  <span className="...">S</span>
+                                )}
+                                {product.size.includes("M") && (
+                                  <span className="...">M</span>
+                                )}
+                                {product.size.includes("L") && (
+                                  <span className="...">L</span>
+                                )}
+                                {product.size.includes("XL") && (
+                                  <span className="...">XL</span>
+                                )}
+                                {product.size.includes("XXL") && (
+                                  <span className="...">XXL</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* Colors (same logic) */}
-                        {Array.isArray(product.color) && product.color.filter(Boolean).length > 0 && (
-                          <div className="mb-1">
-                            <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Available Colors</p>
-                            <div className="flex flex-wrap gap-2 items-center">
-                              {product.color.includes('Silver') && (<button className="..." title="Silver"></button>)}
-                              {product.color.includes('Black') && (<button className="..." title="Black"></button>)}
-                              {product.color.includes('Red') && (<button className="..." title="Red"></button>)}
-                              {product.color.includes('Blue') && (<button className="..." title="Blue"></button>)}
-                              {product.color.includes('Navy Blue') && (<button className="..." title="Navy Blue"></button>)}
-                              {product.color.includes('Green') && (<button className="..." title="Green"></button>)}
+                        {Array.isArray(product.color) &&
+                          product.color.filter(Boolean).length > 0 && (
+                            <div className="mb-1">
+                              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">
+                                Available Colors
+                              </p>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                {product.color.includes("Silver") && (
+                                  <button
+                                    className="..."
+                                    title="Silver"
+                                  ></button>
+                                )}
+                                {product.color.includes("Black") && (
+                                  <button
+                                    className="..."
+                                    title="Black"
+                                  ></button>
+                                )}
+                                {product.color.includes("Red") && (
+                                  <button className="..." title="Red"></button>
+                                )}
+                                {product.color.includes("Blue") && (
+                                  <button className="..." title="Blue"></button>
+                                )}
+                                {product.color.includes("Navy Blue") && (
+                                  <button
+                                    className="..."
+                                    title="Navy Blue"
+                                  ></button>
+                                )}
+                                {product.color.includes("Green") && (
+                                  <button
+                                    className="..."
+                                    title="Green"
+                                  ></button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     </div>
                   </div>
@@ -479,46 +582,53 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
                 <div className="w-24 h-24 bg-gradient-to-br from-rose-100 to-purple-100 rounded-full mx-auto mb-6 flex items-center justify-center">
                   <span className="text-4xl">💎</span>
                 </div>
-                <h3 className="text-2xl font-serif text-slate-800 mb-3">No Bracelets Available</h3>
-                <p className="text-slate-600">Check back soon for new arrivals!</p>
+                <h3 className="text-2xl font-serif text-slate-800 mb-3">
+                  No Bracelets Available
+                </h3>
+                <p className="text-slate-600">
+                  Check back soon for new arrivals!
+                </p>
               </div>
             </div>
           )}
         </div>
       </section>
-
-      
     </div>
-  )
-}
+  );
+};
 
 export async function getServerSideProps(context) {
   if (!mongoose.connections[0].readyState) {
-    await mongoose.connect(process.env.MONGO_URI)
+    await mongoose.connect(process.env.MONGO_URI);
   }
-  let Products = await Product.find({ category: 'Earrings' })
-  let Earrings = {}
+  let Products = await Product.find({ category: "Earrings" });
+  let Earrings = {};
   for (let item of Products) {
     if (item.title in Earrings) {
-      if (!Earrings[item.title].color.includes(item.color) && item.availableQty > 0) {
-        Earrings[item.title].color.push(item.color)
+      if (
+        !Earrings[item.title].color.includes(item.color) &&
+        item.availableQty > 0
+      ) {
+        Earrings[item.title].color.push(item.color);
       }
-      if (!Earrings[item.title].size.includes(item.size) && item.availableQty > 0) {
-        Earrings[item.title].size.push(item.size)
+      if (
+        !Earrings[item.title].size.includes(item.size) &&
+        item.availableQty > 0
+      ) {
+        Earrings[item.title].size.push(item.size);
       }
-    }
-    else {
-      Earrings[item.title] = JSON.parse(JSON.stringify(item))
+    } else {
+      Earrings[item.title] = JSON.parse(JSON.stringify(item));
       if (item.availableQty > 0) {
-        Earrings[item.title].color = [item.color]
-        Earrings[item.title].size = [item.size]
+        Earrings[item.title].color = [item.color];
+        Earrings[item.title].size = [item.size];
       }
     }
   }
 
   return {
     props: { Products: JSON.parse(JSON.stringify(Earrings)) },
-  }
+  };
 }
 
-export default Earrings
+export default Earrings;

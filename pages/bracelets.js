@@ -709,7 +709,7 @@ const Bracelets = ({ Bracelets, addToCart, buyNow, wishlist = {}, addToWishlist,
 
                       {/* Only the title links to the product page */}
                       <Link href={`/product/${product.slug}`} className="group">
-                        <h2 className="text-slate-800 font-serif sm:text-xs lg:text-base font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
+                        <h2 className="text-slate-800 font-serif sm:text-xs sm:font-light lg:text-base lg:font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
                           {product.title}
                         </h2>
                       </Link>
