@@ -620,10 +620,15 @@ const Navbar = ({
       </div>
 
       {/* Cart Sidebar */}
-      <div ref={ref} className={`w-96 h-[100vh] sideCart overflow-y-auto absolute top-0 right-0 bg-gradient-to-br from-slate-50 via-white to-slate-100 shadow-2xl transform transition-transform duration-500 ${Object.keys(cart).length !== 0 ? 'translate-x-0' : 'translate-x-full'}`} style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: '#94a3b8 #f1f5f9'
-      }}>
+      <div
+  ref={ref}
+  className={`w-96 h-[100vh] sideCart overflow-y-auto absolute top-0 right-0 bg-gradient-to-br from-slate-50 via-white to-slate-100 shadow-2xl transform transition-transform duration-500 translate-x-full`}
+  style={{
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#94a3b8 #f1f5f9',
+  }}
+>
+
         {/* Cart Header */}
         <div className='sticky top-0 bg-gradient-to-r from-slate-700 to-slate-800 shadow-lg px-6 py-5 z-10'>
           <h2 className='font-bold text-2xl text-white flex items-center justify-center tracking-wide'>
