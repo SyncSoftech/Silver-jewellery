@@ -641,8 +641,9 @@ const Bracelets = ({ Bracelets, addToCart, buyNow, wishlist = {}, addToWishlist,
               return (
                 <div
                   key={product._id || key}
-                  className="lg:w-1/5 md:w-1/2 p-4 w-full cursor-pointer m-2"
+                  className="lg:w-1/5 md:w-1/2 w-1/2 p-2 sm:p-4 cursor-pointer"
                 >
+
                   {/* Card is NOT wrapped by Link anymore */}
                   <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer border border-gray-100">
                     
@@ -708,7 +709,7 @@ const Bracelets = ({ Bracelets, addToCart, buyNow, wishlist = {}, addToWishlist,
 
                       {/* Only the title links to the product page */}
                       <Link href={`/product/${product.slug}`} className="group">
-                        <h2 className="text-slate-800 font-serif font-semibold text-base mb-2 line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
+                        <h2 className="text-slate-800 font-serif sm:text-xs lg:text-base font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
                           {product.title}
                         </h2>
                       </Link>
@@ -716,7 +717,7 @@ const Bracelets = ({ Bracelets, addToCart, buyNow, wishlist = {}, addToWishlist,
                       <div className="mt-auto">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-slate-800 font-bold text-xl">₹{product.price}</span>
+                            <span className="text-slate-800 sm:text-base font-bold lg:text-xl">₹{product.price}</span>
                             {product.oldPrice && (
                               <span className="text-slate-400 line-through text-xs">₹{product.oldPrice}</span>
                             )}

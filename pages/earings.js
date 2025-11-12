@@ -348,7 +348,7 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
               return (
                 <div
                   key={product._id || key}
-                  className="lg:w-1/5 md:w-1/2 p-4 w-full cursor-pointer m-2"
+                  className="lg:w-1/5 md:w-1/2 w-1/2 p-2 sm:p-4 cursor-pointer"
                 >
                   {/* Card is NOT wrapped by Link anymore */}
                   <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer border border-gray-100">
@@ -415,7 +415,7 @@ const Earrings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, r
 
                       {/* Only the title links to the product page */}
                       <Link href={`/product/${product.slug}`} className="group">
-                        <h2 className="text-slate-800 font-serif font-semibold text-base mb-2 line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
+                        <h2 className="text-slate-800 font-serif sm:text-xs lg:text-base font-semibold line-clamp-2 min-h-[48px] leading-relaxed group-hover:text-rose-600 transition-colors">
                           {product.title}
                         </h2>
                       </Link>
