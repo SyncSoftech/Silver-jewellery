@@ -1328,7 +1328,7 @@ const Navbar = ({
       </div>
       
       {/* Search Bar */}
-      <div className="search-container mt-4 lg:mt-0 mb-2 lg:mb-0 relative mx-4 flex-1 max-w-2xl">
+      <div className="search-container mt-4 lg:mt-0 mb-2 lg:mb-0 relative mx-4 flex-1 max-w-2xl lg:max-w-sm">
         <div className="relative">
           <input
             type="text"
@@ -1490,7 +1490,7 @@ const Navbar = ({
         </ul>
       </div>
       
-      <div className='cart absolute right-0 mx-6 top-5 cursor-pointer flex items-center gap-1'>
+      <div className='cart absolute right-0 mx-6  top-5 lg:top-8 cursor-pointer flex items-center gap-1'>
         <span onMouseOver={() => {setDropdown(true)}} onMouseLeave={() => {setDropdown(false)}}>
           {dropdown && (
             <div 

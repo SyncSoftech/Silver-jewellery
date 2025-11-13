@@ -292,7 +292,7 @@ export default function NewProducts({
   };
 
   return (
-    <section className="py-20  relative overflow-hidden" style={{
+    <section className="py-10  relative overflow-hidden" style={{
       background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
     }}>
       {/* Minimal Decorative Elements */}
@@ -309,7 +309,7 @@ export default function NewProducts({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 max-w-7xl mx-auto px-6 relative z-10">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-8 max-w-7xl mx-auto px-2 lg:px-6 relative z-10">
         {products.map((product, i) => {
           const isInWishlist = product._id in wishlist;
           
