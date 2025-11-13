@@ -1304,6 +1304,417 @@
 // }
 
 
+// // pages/order/[id].jsx  (or wherever your component lives)
+// import { useEffect, useState } from 'react';
+// import { useRouter } from 'next/router';
+// import { format } from 'date-fns';
+// import Link from 'next/link';
+// import jwt from 'jsonwebtoken';
+
+// export default function OrderTrackingPage() {
+//   const router = useRouter();
+//   const { id } = router.query;
+//   const [timeline, setTimeline] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [showReviewModal, setShowReviewModal] = useState(false);
+//   const [reviewData, setReviewData] = useState({
+//     rating: 5,
+//     comment: '',
+//     images: [],
+//   });
+
+//   const [uploadingImages, setUploadingImages] = useState(false);
+//   const [uploadError, setUploadError] = useState('');
+//   const [order, setOrder] = useState(null);
+//   const [cancelling, setCancelling] = useState(false);
+
+//   useEffect(() => {
+//     if (!id) return;
+//     setLoading(true);
+
+//     const fetchData = async () => {
+//       try {
+//         const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+//         const headers = {};
+//         if (token) headers['Authorization'] = `Bearer ${token}`;
+
+//         const [trackingRes, orderRes] = await Promise.all([
+//           fetch(`/api/orders/${id}/track`, { headers }),
+//           fetch(`/api/orders/${id}`, { headers })
+//         ]);
+
+//         // Tracking
+//         if (trackingRes.ok) {
+//           const trackingData = await trackingRes.json();
+//           setTimeline(Array.isArray(trackingData) ? trackingData : (trackingData.timeline || []));
+//           // show review modal if last event is delivered and user hasn't submitted
+//           const lastEvent = (Array.isArray(trackingData) ? trackingData : (trackingData.timeline || []))[((Array.isArray(trackingData) ? trackingData : (trackingData.timeline || [])).length - 1)];
+//           if (lastEvent?.status?.toLowerCase() === 'delivered') {
+//             const reviewSubmitted = localStorage.getItem(`review_submitted_${id}`);
+//             if (!reviewSubmitted) setShowReviewModal(true);
+//           }
+//         } else {
+//           console.error('Failed to fetch tracking:', trackingRes.status, trackingRes.statusText);
+//         }
+
+//         // Order
+//         if (orderRes.ok) {
+//           const orderData = await orderRes.json();
+//           // support multiple shapes: { order: {...} }, { data: { order: {...} } }, or order directly
+//           const processedOrder = orderData.order || orderData.data?.order || orderData.data || orderData;
+//           console.log('Fetched order (raw):', orderData);
+//           console.log('Processed order:', processedOrder);
+//           setOrder(processedOrder);
+//         } else {
+//           console.error('Failed to fetch order:', orderRes.status, orderRes.statusText);
+//         }
+//       } catch (e) {
+//         console.error('Error fetching data:', e);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchData();
+//   }, [id]);
+
+//   // Upload multiple files to /api/upload/cloudinary and return uploaded URLs
+//   const uploadFilesToCloudinary = async (files) => {
+//     setUploadError('');
+//     setUploadingImages(true);
+//     try {
+//       const token = localStorage.getItem('token') || localStorage.getItem('adminToken') || null;
+
+//       const uploadPromises = files.map((file) => {
+//         const formData = new FormData();
+//         formData.append('image', file);
+
+//         return fetch('/api/upload/cloudinary', {
+//           method: 'POST',
+//           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+//           body: formData,
+//         })
+//           .then(async (res) => {
+//             const data = await res.json();
+//             if (!res.ok) {
+//               const msg = data?.error || data?.message || 'Upload failed';
+//               throw new Error(msg);
+//             }
+//             return data?.secure_url || data?.url || (data.result && data.result.secure_url) || data?.raw?.secure_url;
+//           });
+//       });
+
+//       const urls = await Promise.all(uploadPromises);
+//       return urls;
+//     } catch (err) {
+//       console.error('Image upload error:', err);
+//       setUploadError(err.message || 'Failed to upload images');
+//       return null;
+//     } finally {
+//       setUploadingImages(false);
+//     }
+//   };
+
+//   const handleImageChange = async (e) => {
+//     const files = Array.from(e.target.files || []);
+//     if (files.length === 0) return;
+
+//     const invalid = files.find((f) => !f.type.startsWith('image/'));
+//     if (invalid) {
+//       setUploadError('One or more files are not images. Please select images only.');
+//       return;
+//     }
+//     const tooLarge = files.find((f) => f.size > 5 * 1024 * 1024);
+//     if (tooLarge) {
+//       setUploadError('One or more images exceed 5MB. Please choose smaller files.');
+//       return;
+//     }
+
+//     const urls = await uploadFilesToCloudinary(files);
+//     if (urls && Array.isArray(urls)) {
+//       setReviewData((prev) => ({ ...prev, images: urls }));
+//       setUploadError('');
+//     }
+//   };
+
+//   const handleSubmitReview = async () => {
+//     if (uploadingImages) {
+//       alert('Please wait for image uploads to finish before submitting your review.');
+//       return;
+//     }
+
+//     if (!reviewData.comment?.trim()) {
+//       if (!confirm('Submit review without a comment?')) return;
+//     }
+
+//     try {
+//       const rawToken = localStorage.getItem('token') || localStorage.getItem('adminToken');
+//       let userId = null;
+//       if (rawToken) {
+//         const decoded = jwt.decode(rawToken);
+//         userId = decoded?.user || decoded?.id || decoded?.sub || null;
+//       }
+
+//       const productId = order?.orderItems?.[0]?.product;
+//       if (!productId) {
+//         throw new Error('Could not find product information for this order. Please contact support.');
+//       }
+
+//       const body = {
+//         productId,
+//         userId,
+//         rating: Number(reviewData.rating),
+//         comment: reviewData.comment,
+//         images: reviewData.images,
+//       };
+
+//       const res = await fetch('/api/review/addreview', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           ...(rawToken && { 'Authorization': `Bearer ${rawToken}` })
+//         },
+//         body: JSON.stringify(body),
+//       });
+
+//       const data = await res.json();
+//       if (data.success) {
+//         localStorage.setItem(`review_submitted_${id}`, 'true');
+//         alert('Review added successfully!');
+//         setShowReviewModal(false);
+//         setReviewData({ rating: 5, comment: '', images: [] });
+//       } else {
+//         throw new Error(data?.message || 'Failed to add review');
+//       }
+//     } catch (err) {
+//       console.error('Review submission error:', err);
+//       alert(err.message || 'Error submitting review');
+//     }
+//   };
+
+//   const handleCancelReview = () => {
+//     localStorage.setItem(`review_submitted_${id}`, 'declined');
+//     setShowReviewModal(false);
+//   };
+
+//   const handleCancelOrder = async () => {
+//     if (!window.confirm('Are you sure you want to cancel this order?')) {
+//       return;
+//     }
+
+//     setCancelling(true);
+//     try {
+//       const token = localStorage.getItem('token');
+//       if (!token) {
+//         throw new Error('Please log in to cancel the order');
+//       }
+
+//       const res = await fetch(`/api/orders/cancel`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`
+//         },
+//         body: JSON.stringify({ orderId: id }),
+//       });
+
+//       if (res.ok) {
+//         // Refresh the order status using GET on cancel endpoint (or your order endpoint)
+//         const orderRes = await fetch(`/api/orders/cancel?orderId=${encodeURIComponent(id)}`, {
+//           headers: { Authorization: `Bearer ${token}` }
+//         });
+
+//         if (orderRes.ok) {
+//           const data = await orderRes.json();
+//           const refreshedOrder = data.order || data;
+//           setOrder(refreshedOrder);
+//         }
+
+//         // Refresh timeline as well
+//         const trackingRes = await fetch(`/api/orders/${id}/track`, {
+//           headers: {
+//             'Authorization': `Bearer ${token}`
+//           }
+//         });
+//         if (trackingRes.ok) {
+//           setTimeline(await trackingRes.json());
+//         }
+
+//         alert('Order has been cancelled successfully');
+//       } else {
+//         const error = await res.json();
+//         throw new Error(error.error || 'Failed to cancel order');
+//       }
+//     } catch (err) {
+//       console.error('Error cancelling order:', err);
+//       alert(err.message || 'Error cancelling order');
+//     } finally {
+//       setCancelling(false);
+//     }
+//   };
+
+//   // Cancellation logic (case-insensitive)
+//   const cancellableStatuses = ['Pending', 'Processing', 'Paid'];
+//   const isShipped = timeline.some(e => e.status?.toLowerCase() === 'shipped');
+//   const status = (order?.status || '').toLowerCase();
+
+//   const canCancelOrder =
+//     !!order &&
+//     cancellableStatuses.some(s => s.toLowerCase() === status) &&
+//     !isShipped &&
+//     status !== 'cancelled';
+
+//   // Debug logs
+//   console.log('Order status:', order?.status);
+//   console.log('Can cancel?', canCancelOrder);
+//   console.log('Is shipped?', isShipped);
+//   console.log('Timeline:', timeline);
+
+//   return (
+//     <div className="p-6 max-w-3xl mx-auto">
+//       <div className="mb-4">
+//         <Link href="/" className="text-indigo-600">Home</Link>
+//       </div>
+//       <h1 className="text-2xl font-bold mb-4">Order Tracking</h1>
+
+//       {loading ? (
+//         <div>Loading...</div>
+//       ) : (
+//         <>
+//           <div className="flex justify-between items-center mb-4">
+//             <p>Timeline for order <strong>#{id}</strong></p>
+
+//             {/* Show cancelled message if order.status === 'Cancelled' */}
+//             {status === 'cancelled' && (
+//               <div className="px-4 py-2 bg-gray-100 text-red-600 rounded">
+//                 This order has been <strong>Cancelled</strong>.
+//               </div>
+//             )}
+
+//             {/* Cancel button */}
+//             {canCancelOrder && (
+//               <button
+//                 onClick={handleCancelOrder}
+//                 disabled={cancelling}
+//                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400"
+//               >
+//                 {cancelling ? 'Cancelling...' : 'Cancel Order'}
+//               </button>
+//             )}
+
+//             {/* If cannot cancel because it's shipped */}
+//             {!canCancelOrder && order && isShipped && (
+//               <div className="text-sm text-gray-500">
+//                 Order cannot be cancelled as it has already been shipped
+//               </div>
+//             )}
+//           </div>
+
+//           {timeline.length === 0 ? (
+//             <p>No tracking events yet.</p>
+//           ) : (
+//             <ul className="space-y-4">
+//               {timeline.map((evt, i) => (
+//                 <li key={evt._id ?? evt.createdAt ?? i} className="border rounded p-4">
+//                   <div className="flex justify-between">
+//                     <div>
+//                       <div className="font-medium">
+//                         {(evt.status || '').charAt(0).toUpperCase() + (evt.status || '').slice(1)}
+//                       </div>
+//                       {evt.note && <div className="text-gray-600">{evt.note}</div>}
+//                       {evt.carrier && (
+//                         <div className="text-sm text-gray-600">
+//                           Carrier: {evt.carrier} — {evt.trackingNumber}
+//                         </div>
+//                       )}
+//                       {evt.trackingUrl && (
+//                         <div className="text-sm">
+//                           <a target="_blank" rel="noreferrer" href={evt.trackingUrl} className="text-indigo-600">
+//                             Track shipment
+//                           </a>
+//                         </div>
+//                       )}
+//                     </div>
+//                     <div className="text-sm text-gray-500">
+//                       {evt.createdAt ? format(new Date(evt.createdAt), 'PPP p') : ''}
+//                     </div>
+//                   </div>
+//                 </li>
+//               ))}
+//             </ul>
+//           )}
+//         </>
+//       )}
+
+//       {/* Review modal (unchanged) */}
+//       {showReviewModal && (
+//         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+//           <div className="bg-white rounded-lg p-6 w-full max-w-md">
+//             <h2 className="text-lg font-semibold mb-4">Add Review</h2>
+//             <label className="block mb-2 font-medium">Rating:</label>
+//             <select
+//               value={reviewData.rating}
+//               onChange={(e) => setReviewData({ ...reviewData, rating: Number(e.target.value) })}
+//               className="border rounded w-full mb-4 p-2"
+//             >
+//               {[5, 4, 3, 2, 1].map((r) => (
+//                 <option key={r} value={r}>{r} Star{r > 1 ? 's' : ''}</option>
+//               ))}
+//             </select>
+
+//             <label className="block mb-2 font-medium">Comment:</label>
+//             <textarea
+//               value={reviewData.comment}
+//               onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+//               className="border rounded w-full p-2 mb-4"
+//               placeholder="Write your review..."
+//               rows="3"
+//             />
+
+//             <label className="block mb-2 font-medium">Upload Images:</label>
+//             <input
+//               type="file"
+//               multiple
+//               accept="image/*"
+//               onChange={handleImageChange}
+//               className="mb-4"
+//               disabled={uploadingImages}
+//             />
+//             {uploadError && (
+//               <div className="text-sm text-red-600 mb-2">{uploadError}</div>
+//             )}
+
+//             <div className="flex gap-2 mb-4 flex-wrap">
+//               {reviewData.images.map((img, i) => (
+//                 <img key={i} src={img} alt={`preview-${i}`} className="w-16 h-16 object-cover rounded" />
+//               ))}
+//             </div>
+
+//             <div className="flex justify-end gap-3">
+//               <button
+//                 onClick={handleCancelReview}
+//                 className="px-4 py-2 border rounded text-gray-600"
+//                 disabled={uploadingImages}
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 onClick={handleSubmitReview}
+//                 className="px-4 py-2 bg-indigo-600 text-white rounded"
+//                 disabled={uploadingImages}
+//               >
+//                 {uploadingImages ? 'Uploading images...' : 'Submit'}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
+
 // pages/order/[id].jsx  (or wherever your component lives)
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -1553,19 +1964,39 @@ export default function OrderTrackingPage() {
     }
   };
 
-  // Cancellation logic (case-insensitive)
-  const cancellableStatuses = ['Pending', 'Processing', 'Paid'];
-  const isShipped = timeline.some(e => e.status?.toLowerCase() === 'shipped');
-  const status = (order?.status || '').toLowerCase();
-
+  // FIXED: Cancellation logic
+  const cancellableStatuses = ['pending', 'processing', 'paid'];
+  const nonCancellableStatuses = ['shipped', 'delivered', 'cancelled'];
+  const status = (order?.status || '').toLowerCase().trim();
+  
+  // Check if timeline has shipped or delivered status
+  const isShipped = timeline.some(e => {
+    const evtStatus = (e.status || '').toLowerCase().trim();
+    return evtStatus === 'shipped' || evtStatus === 'delivered';
+  });
+  
+  // Check if the last event in timeline is delivered
+  const lastEvent = timeline.length > 0 ? timeline[timeline.length - 1] : null;
+  const isDelivered = lastEvent?.status?.toLowerCase().trim() === 'delivered';
+  
+  // Order can be cancelled if:
+  // 1. Order exists
+  // 2. Status is in cancellable list
+  // 3. Status is NOT in non-cancellable list
+  // 4. Timeline doesn't show it's been shipped or delivered
+  // 5. Not delivered
   const canCancelOrder =
     !!order &&
-    cancellableStatuses.some(s => s.toLowerCase() === status) &&
+    cancellableStatuses.includes(status) &&
+    !nonCancellableStatuses.includes(status) &&
     !isShipped &&
-    status !== 'cancelled';
+    !isDelivered;
 
   // Debug logs
-  console.log('Order status:', order?.status);
+  console.log('Order status (raw):', order?.status);
+  console.log('Order status (normalized):', status);
+  console.log('Last timeline event:', lastEvent);
+  console.log('Is delivered?', isDelivered);
   console.log('Can cancel?', canCancelOrder);
   console.log('Is shipped?', isShipped);
   console.log('Timeline:', timeline);
@@ -1591,7 +2022,7 @@ export default function OrderTrackingPage() {
               </div>
             )}
 
-            {/* Cancel button */}
+            {/* Cancel button - only show if order can be cancelled */}
             {canCancelOrder && (
               <button
                 onClick={handleCancelOrder}
@@ -1602,10 +2033,10 @@ export default function OrderTrackingPage() {
               </button>
             )}
 
-            {/* If cannot cancel because it's shipped */}
-            {!canCancelOrder && order && isShipped && (
+            {/* If cannot cancel because it's shipped or delivered */}
+            {!canCancelOrder && order && (status === 'shipped' || status === 'delivered' || isShipped) && status !== 'cancelled' && (
               <div className="text-sm text-gray-500">
-                Order cannot be cancelled as it has already been shipped
+                Order cannot be cancelled as it has already been {status === 'delivered' ? 'delivered' : 'shipped'}
               </div>
             )}
           </div>
