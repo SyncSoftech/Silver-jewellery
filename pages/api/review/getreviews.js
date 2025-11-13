@@ -1,5 +1,8 @@
+// pages/api/reviews/getreviews.js
 import dbConnect from "@/middleware/mongoose";
 import Review from "@/models/Review";
+import User from "@/models/User"; // <--- add this
+
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -16,16 +19,17 @@ export default async function handler(req, res) {
         .populate("user", "name email")
         .sort({ createdAt: -1 });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         count: reviews.length,
         reviews,
       });
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
   } else {
-    res.status(405).json({ success: false, message: "Method not allowed" });
+    res.setHeader("Allow", ["GET"]);
+    return res.status(405).json({ success: false, message: "Method not allowed" });
   }
 }

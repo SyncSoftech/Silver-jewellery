@@ -25,6 +25,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
   
   // Stock tracking
   const [outOfStockItems, setOutOfStockItems] = useState([]);
+  const [hasOutOfStockItems, setHasOutOfStockItems] = useState(false);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -39,43 +40,104 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
     isDefault: false
   });
 
-  useEffect(() => {
-    if (isAuthenticated()) {
-      fetchUserAddresses();
+  // Check stock availability for items
+  const checkStockAvailability = async (items) => {
+  try {
+    // Get all unique product IDs or slugs
+    const productIdentifiers = Array.from(
+      new Set(
+        Object.values(items).map(item => item._id || item.slug || Object.keys(items)[0])
+      )
+    );
+
+    if (productIdentifiers.length === 0) {
+      setHasOutOfStockItems(false);
+      setOutOfStockItems([]);
+      return items;
     }
+
+    const response = await fetch(
+      `/api/inventory/stock?productIds=${JSON.stringify(productIdentifiers)}`
+    );
     
-    // Check if this is a "Buy Now" checkout
-    if (router.query.buyNow === 'true') {
-      const buyNowItem = sessionStorage.getItem('buyNowItem');
-      if (buyNowItem) {
-        try {
+    if (!response.ok) {
+      throw new Error('Failed to check stock');
+    }
+
+    const stockData = await response.json();
+    const outOfStock = [];
+    const updatedItems = { ...items };
+
+    // Update items with stock information
+    Object.entries(updatedItems).forEach(([key, item]) => {
+      const stockInfo = stockData.find(s => 
+        s.productId === item._id || s.slug === item.slug || s._id === item._id
+      );
+
+      if (stockInfo) {
+        updatedItems[key] = {
+          ...item,
+          availableQty: stockInfo.availableQty,
+          inStock: stockInfo.inStock
+        };
+
+        if (stockInfo.availableQty < (item.qty || 1)) {
+          outOfStock.push(item.name);
+        }
+      }
+    });
+
+    setOutOfStockItems(outOfStock);
+    setHasOutOfStockItems(outOfStock.length > 0);
+    return updatedItems;
+  } catch (error) {
+    console.error('Error checking stock:', error);
+    toast.error('Error checking product availability');
+    // In case of error, don't block the UI - assume items are in stock
+    return items;
+  }
+};
+
+  useEffect(() => {
+  if (isAuthenticated()) {
+    fetchUserAddresses();
+  }
+  
+  const initializeCheckout = async () => {
+    try {
+      if (router.query.buyNow === 'true') {
+        const buyNowItem = sessionStorage.getItem('buyNowItem');
+        if (buyNowItem) {
           const item = JSON.parse(buyNowItem);
-          setCheckoutItems(item);
+          const itemsWithStock = await checkStockAvailability(item);
+          setCheckoutItems(itemsWithStock);
           setIsBuyNow(true);
           
-          // Calculate subtotal for buy now item
-          let subt = 0;
-          let keys = Object.keys(item);
-          for (let i = 0; i < keys.length; i++) {
-            subt += item[keys[i]].price * item[keys[i]].qty;
-          }
+          // Calculate subtotal
+          const subt = Object.values(itemsWithStock).reduce(
+            (sum, item) => sum + (item.price * (item.qty || 1)), 
+            0
+          );
           setCheckoutSubTotal(subt);
-        } catch (error) {
-          console.error('Error parsing buy now item:', error);
-          toast.error('Invalid buy now item');
-          router.push('/');
         }
       } else {
-        toast.error('No item found for quick checkout');
-        router.push('/');
+        const itemsWithStock = await checkStockAvailability(cart);
+        setCheckoutItems(itemsWithStock);
+        setCheckoutSubTotal(subTotal);
+        setIsBuyNow(false);
       }
-    } else {
-      // Regular cart checkout
-      setCheckoutItems(cart);
-      setCheckoutSubTotal(subTotal);
-      setIsBuyNow(false);
+    } catch (error) {
+      console.error('Error initializing checkout:', error);
+      // Fallback to original items if there's an error
+      setCheckoutItems(router.query.buyNow === 'true' ? 
+        JSON.parse(sessionStorage.getItem('buyNowItem') || '{}') : 
+        cart
+      );
     }
-  }, [router.query, cart, subTotal]);
+  };
+  
+  initializeCheckout();
+}, [router.query, cart, subTotal]);
 
   const fetchUserAddresses = async () => {
     try {
@@ -148,6 +210,22 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       toast.error('Your cart is empty');
       return;
     }
+    
+    // Re-validate stock before proceeding to payment
+    const updatedItems = await checkStockAvailability(checkoutItems);
+    setCheckoutItems(updatedItems);
+    
+    // Check if any items are out of stock
+    const hasOutOfStock = Object.values(updatedItems).some(
+      item => (item.availableQty !== undefined && item.availableQty <= 0) || 
+             (item.qty > (item.availableQty || 0))
+    );
+    
+    if (hasOutOfStock) {
+      toast.error('Some items in your cart are out of stock. Please update your cart.');
+      return;
+    }
+    
     await initiatePayment();
   };
 
@@ -576,44 +654,55 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
           </div>
           
           {/* Check for out of stock items */}
-          {Object.values(checkoutItems).some(item => item.availableQty !== undefined && item.availableQty <= 0) && (
+          {(hasOutOfStockItems || outOfStockItems.length > 0) && (
             <div className='mt-6 p-4 bg-red-50 border border-red-200 rounded-lg'>
-              <p className='text-red-700 font-semibold text-center'>
-                ⚠️ Some items in your cart are out of stock. Please remove them to proceed.
+              <p className='text-red-700 font-semibold text-center mb-2'>
+                ⚠️ Some items in your cart are out of stock or have insufficient quantity.
               </p>
+              <ul className='text-sm text-red-600 list-disc pl-5'>
+                {outOfStockItems.map((itemName, index) => (
+                  <li key={index}>{itemName} - Out of stock</li>
+                ))}
+                {Object.values(checkoutItems).map((item) => {
+                  if (item.availableQty > 0 && item.qty > item.availableQty) {
+                    return (
+                      <li key={item._id || item.name}>
+                        {item.name} - Only {item.availableQty} available
+                      </li>
+                    );
+                  }
+                  return null;
+                })}
+              </ul>
             </div>
           )}
 
           {/* Payment Button */}
           <div className='mt-6'>
-            {Object.values(checkoutItems).some(item => item.availableQty !== undefined && item.availableQty <= 0) ? (
-              <button
-                disabled={true}
-                className='w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-400 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400'
-              >
-                <BsBagCheckFill className='mr-2' />
-                Cannot Proceed - Out of Stock Items
-              </button>
-            ) : (
-              <button
-                onClick={handleProceedToPayment}
-                disabled={Object.keys(checkoutItems).length === 0 || !selectedAddress || loading}
-                className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
-                  Object.keys(checkoutItems).length === 0 || !selectedAddress || loading
-                    ? 'bg-indigo-300 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-              >
-                {loading ? (
-                  'Processing...'
-                ) : (
-                  <>
-                    <BsBagCheckFill className='mr-2' />
-                    Pay ₹{checkoutSubTotal}
-                  </>
-                )}
-              </button>
-            )}
+            <button
+  onClick={handleProceedToPayment}
+  disabled={
+    Object.keys(checkoutItems).length === 0 || 
+    !selectedAddress || 
+    loading
+  }
+  className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
+    Object.keys(checkoutItems).length === 0 || 
+    !selectedAddress || 
+    loading
+      ? 'bg-gray-400 cursor-not-allowed'
+      : 'bg-indigo-600 hover:bg-indigo-700'
+  } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+>
+  {loading ? (
+    'Processing...'
+  ) : (
+    <>
+      <BsBagCheckFill className='mr-2' />
+      Pay ₹{checkoutSubTotal}
+    </>
+  )}
+</button>
           </div>
         </div>
       </div>
