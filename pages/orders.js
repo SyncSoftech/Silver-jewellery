@@ -509,7 +509,7 @@ export default function Orders() {
         <div className="text-center py-12">
           <p className="text-gray-600 mb-4">You have not placed any orders yet.</p>
           <Link href="/">
-            <a className="inline-block px-6 py-2 bg-indigo-600 text-white rounded">Continue Shopping</a>
+            <span className="inline-block px-6 py-2 bg-indigo-600 text-white rounded">Continue Shopping</span>
           </Link>
         </div>
       ) : (
