@@ -762,7 +762,6 @@
 
 // export default Post
 
-
 // pages/product/[slug].js
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
@@ -775,7 +774,7 @@ import { PiShareFatLight } from "react-icons/pi";
 import Link from "next/link";
 
 const Star = ({ filled }) => (
-  <svg className={`w-4 h-4 inline-block ${filled ? 'text-yellow-400' : 'text-gray-300'}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+  <svg className={`w-5 h-5 inline-block ${filled ? 'text-yellow-400' : 'text-gray-300'}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.955a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.455a1 1 0 00-.364 1.118l1.287 3.955c.3.921-.755 1.688-1.54 1.118L10 15.347l-3.49 2.381c-.784.57-1.838-.197-1.539-1.118l1.287-3.955a1 1 0 00-.364-1.118L2.523 9.382c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.955z" />
   </svg>
 )
@@ -927,254 +926,339 @@ const Post = ({ buyNow, addToCart, product, variants, wishlist = {}, addToWishli
 
   return (
     <>
-      <section className="text-gray-600 body-font overflow-hidden">
+      <section className="body-font" style={{ background: 'radial-gradient(circle, #FFF2EF, #E0CAC5)' }}>
         <ToastContainer position="bottom-center" autoClose={1000} />
-        <div className="container px-5 py-16 mx-auto">
-          <div className="lg:w-4/5 mx-auto flex flex-wrap">
-            <div className="lg:w-1/2 w-full relative">
-              <img alt="ecommerce" className="lg:h-auto px-24 object-cover object-top rounded" src={product.img} />
-              
-              {/* Wishlist Heart Icon */}
-              <div className="absolute top-8 right-28 flex space-x-3 z-10">
-                <button
-                  onClick={handleWishlistToggle}
-                  className="bg-white hover:bg-gray-100 p-3 rounded-full shadow-lg transition-all duration-200"
-                  title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                  aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                >
-                  {isInWishlist ? (
-                    <AiFillHeart className="text-red-500 text-2xl" />
-                  ) : (
-                    <AiOutlineHeart className="text-gray-600 hover:text-red-500 text-2xl" />
-                  )}
-                </button>
+        <div className="container px-5 py-12 mx-auto max-w-7xl">
+          <div className="lg:flex lg:gap-12">
+            {/* Image Section */}
+            <div className="lg:w-1/2 w-full mb-8 lg:mb-0">
+              <div className="relative bg-white rounded-2xl overflow-hidden shadow-lg">
+                <img 
+                  alt={product.title} 
+                  className="w-full h-auto object-cover object-center " 
+                  src={product.img} 
+                />
+                
+                {/* Action Buttons - Wishlist & Share */}
+                <div className="absolute top-6 right-6 flex gap-3">
+                  <button
+                    onClick={handleWishlistToggle}
+                    className="bg-white hover:bg-rose-50 p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 border border-rose-100"
+                    title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                    aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                  >
+                    {isInWishlist ? (
+                      <AiFillHeart className="text-rose-500 text-2xl" />
+                    ) : (
+                      <AiOutlineHeart className="text-rose-400 hover:text-rose-500 text-2xl transition-colors" />
+                    )}
+                  </button>
 
-                {/* Share Icon Button */}
-                <button
-                  onClick={handleShare}
-                  className="bg-white hover:bg-gray-100 p-3 rounded-full shadow-lg transition-all duration-200"
-                  title="Share product"
-                  aria-label="Share product"
-                >
-                  <PiShareFatLight className="text-gray-700 text-2xl" />
-                </button>
+                  <button
+                    onClick={handleShare}
+                    className="bg-white hover:bg-rose-50 p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 border border-rose-100"
+                    title="Share product"
+                    aria-label="Share product"
+                  >
+                    <PiShareFatLight className="text-rose-400 text-2xl" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="lg:w-1/2 w-full lg:pl-10 lg:py-6 mt-6 lg:mt-0">
-              <h2 className="text-sm title-font text-gray-500 tracking-widest">BRAND NAME</h2>
-              <h1 className="text-gray-900 text-3xl title-font font-medium mb-1">
-                {product.title} ({product.size}/{product.color})
+            {/* Product Details Section */}
+            <div className="lg:w-1/2 w-full">
+              <div className="mb-4">
+                <span className="text-xs font-semibold text-rose-700 uppercase tracking-wider bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+                  Brand Name
+                </span>
+              </div>
+
+              <h1 className="text-gray-900 text-3xl lg:text-4xl font-bold mb-3 leading-tight">
+                {product.title}
               </h1>
 
-              {/* Rating & review count */}
-              <div className="flex items-center mb-3">
-                <div className="mr-3">
-                  {/* show up to 5 stars */}
+              <div className="text-sm text-gray-600 mb-4">
+                <span className="inline-block bg-white px-3 py-1 rounded-full mr-2 border border-rose-100">
+                  Size: {product.size}
+                </span>
+                <span className="inline-block bg-white px-3 py-1 rounded-full border border-rose-100">
+                  Color: {product.color}
+                </span>
+              </div>
+
+              {/* Rating & Reviews */}
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-rose-100">
+                <div className="flex items-center">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} filled={i < Math.round(averageRating)} />
                   ))}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm font-medium text-gray-700">
                   {reviewsLoading ? (
-                    <span>Loading reviews...</span>
+                    <span>Loading...</span>
                   ) : (
-                    <span>{averageRating ? averageRating.toFixed(1) : '0.0'} • {reviews.length} review{reviews.length !== 1 ? 's' : ''}</span>
+                    <span>{averageRating ? averageRating.toFixed(1) : '0.0'} ({reviews.length} review{reviews.length !== 1 ? 's' : ''})</span>
                   )}
                 </div>
-
-                {/* Link to full reviews page */}
-                <div className="ml-4">
-                  <Link href={`/product/${slug}/reviews`}>
-                    <span className="text-indigo-600 hover:underline text-sm">See all reviews</span>
-                  </Link>
-                </div>
+                <Link href={`/product/${slug}/reviews`}>
+                  <span className="text-rose-600 hover:text-rose-800 text-sm font-medium hover:underline transition-colors">
+                    See all reviews →
+                  </span>
+                </Link>
               </div>
 
-              <p className="leading-relaxed">{product.desc}</p>
+              {/* Description */}
+              <p className="text-gray-700 leading-relaxed mb-6 text-base">{product.desc}</p>
 
               {/* Variant Selectors */}
               {(color !== '' || size !== '') && (
-                <div className="flex mt-6 items-center pb-5 border-b-2 border-gray-100 mb-5">
-                  {/* Show Color Selector only if color is available */}
-                  {color !== '' && Object.keys(variants).length > 0 && (
-                    <div className="flex">
-                      <span className="mr-3">Color</span>
-
-                      {Object.keys(variants).includes('White') && Object.keys(variants['White']).includes(size) && (
-                        <button
-                          onClick={() => refreshVarient(size, 'White')}
-                          className={`order-2 bg-white border-2 rounded-full w-6 h-6 focus:outline-none ${color === 'White' ? 'border-black' : 'border-gray-300'}`}
-                        ></button>
-                      )}
-                      {Object.keys(variants).includes('Silver') && Object.keys(variants['Silver']).includes(size) && (
-                        <button
-                          onClick={() => refreshVarient(size, 'Silver')}
-                          className={`order-2 bg-[#C0C0C0] border-2 rounded-full w-6 h-6 focus:outline-none ${color === 'Silver' ? 'border-black' : 'border-gray-300'}`}
-                        ></button>
-                      )}
-                      {/* Add other colors following the same pattern */}
-                    </div>
-                  )}
-
-                  {/* Show Size Selector only if size is available */}
-                  {size !== '' && Object.keys(variants[color] || {}).length > 0 && (
-                    <div className="flex ml-6 items-center">
-                      <span className="mr-3">Size</span>
-                      <div className="relative">
-                        <select
-                          value={size}
-                          onChange={(e) => refreshVarient(e.target.value, color)}
-                          className="rounded border appearance-none border-gray-300 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-base pl-3 pr-10"
-                        >
-                          {Object.keys(variants[color] || {}).map((sz) => (
-                            <option key={sz} value={sz}>
-                              {sz}
-                            </option>
-                          ))}
-                        </select>
-
-                        <span className="absolute right-0 top-0 h-full w-10 text-center text-gray-600 pointer-events-none flex items-center justify-center">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            className="w-4 h-4"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M6 9l6 6 6-6"></path>
-                          </svg>
-                        </span>
+                <div className="mb-6 pb-6 border-b border-rose-100">
+                  <div className="space-y-4">
+                    {/* Color Selector */}
+                    {color !== '' && Object.keys(variants).length > 0 && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Select Color
+                        </label>
+                        <div className="flex gap-3">
+                          {Object.keys(variants).includes('White') && Object.keys(variants['White']).includes(size) && (
+                            <button
+                              onClick={() => refreshVarient(size, 'White')}
+                              className={`relative bg-white border-2 rounded-lg w-10 h-10 focus:outline-none transition-all duration-200 hover:scale-105 ${
+                                color === 'White' ? 'border-rose-500 ring-2 ring-rose-200' : 'border-gray-300 hover:border-rose-300'
+                              }`}
+                              title="White"
+                            >
+                              {color === 'White' && (
+                                <span className="absolute inset-0 flex items-center justify-center">
+                                  <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
+                                </span>
+                              )}
+                            </button>
+                          )}
+                          {Object.keys(variants).includes('Silver') && Object.keys(variants['Silver']).includes(size) && (
+                            <button
+                              onClick={() => refreshVarient(size, 'Silver')}
+                              className={`relative bg-[#C0C0C0] border-2 rounded-lg w-10 h-10 focus:outline-none transition-all duration-200 hover:scale-105 ${
+                                color === 'Silver' ? 'border-rose-500 ring-2 ring-rose-200' : 'border-gray-300 hover:border-rose-300'
+                              }`}
+                              title="Silver"
+                            >
+                              {color === 'Silver' && (
+                                <span className="absolute inset-0 flex items-center justify-center">
+                                  <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
+                                </span>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Size Selector */}
+                    {size !== '' && Object.keys(variants[color] || {}).length > 0 && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Select Size
+                        </label>
+                        <div className="relative inline-block">
+                          <select
+                            value={size}
+                            onChange={(e) => refreshVarient(e.target.value, color)}
+                            className="appearance-none bg-white border-2 border-gray-300 rounded-lg py-3 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400 text-base font-medium text-gray-700 cursor-pointer hover:border-rose-300 transition-colors"
+                          >
+                            {Object.keys(variants[color] || {}).map((sz) => (
+                              <option key={sz} value={sz}>
+                                {sz}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg
+                              className="w-5 h-5 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M6 9l6 6 6-6"></path>
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Stock Status */}
-              <div className="mt-4 mb-4">
+              <div className="mb-6">
                 {product.availableQty > 0 ? (
-                  <div className="flex items-center space-x-2">
-                    <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
-                    <span className="text-green-600 font-semibold text-sm">
-                      In Stock 
+                  <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span className="text-green-700 font-semibold text-sm">
+                      In Stock - Ready to Ship
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2">
-                    <span className="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
-                    <span className="text-red-600 font-semibold text-sm">
+                  <div className="inline-flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    <span className="text-red-700 font-semibold text-sm">
                       Out of Stock
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="flex">
-                <span className="title-font font-medium text-2xl text-gray-900">₹{product.price}</span>
-                <button
-                  onClick={() => buyNow(slug, 1, product.price, product.title, size, color, product.img)}
-                  disabled={product.availableQty <= 0}
-                  className={`flex ml-8 text-white border-0 py-2 px-2 md:px-6 focus:outline-none rounded ${
-                    product.availableQty > 0
-                      ? 'bg-indigo-500 hover:bg-indigo-600 cursor-pointer'
-                      : 'bg-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  Buy Now
-                </button>
-                <button
-                  onClick={() => addToCart(slug, 1, product.price, product.title, size, color, product.img)}
-                  disabled={product.availableQty <= 0}
-                  className={`flex ml-4 text-white border-0 py-2 px-2 md:px-6 focus:outline-none rounded ${
-                    product.availableQty > 0
-                      ? 'bg-indigo-500 hover:bg-indigo-600 cursor-pointer'
-                      : 'bg-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  Add to Cart
-                </button>
+              {/* Price & Action Buttons */}
+              <div className="mb-6">
+                <div className="flex items-baseline gap-3 mb-6">
+                  <span className="text-4xl font-bold text-gray-900">₹{product.price}</span>
+                  <span className="text-sm text-gray-500">Inclusive of all taxes</span>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <button
+                    onClick={() => buyNow(slug, 1, product.price, product.title, size, color, product.img)}
+                    disabled={product.availableQty <= 0}
+                    className={`flex-1 min-w-[140px] py-4 px-6 rounded-xl font-semibold text-base transition-all duration-200 ${
+                      product.availableQty > 0
+                        ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Buy Now
+                  </button>
+                  <button
+                    onClick={() => addToCart(slug, 1, product.price, product.title, size, color, product.img)}
+                    disabled={product.availableQty <= 0}
+                    className={`flex-1 min-w-[140px] py-4 px-6 rounded-xl font-semibold text-base transition-all duration-200 ${
+                      product.availableQty > 0
+                        ? 'bg-white border-2 border-rose-500 text-rose-600 hover:bg-rose-50 shadow-md hover:shadow-lg'
+                        : 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
               </div>
 
-              <div className="pin mt-6 flex space-x-2 text-sm">
-                <input
-                  onChange={onChangePin}
-                  className="px-2 border-2 border-black-700 rounded-md"
-                  placeholder="Enter your pincode"
-                  type="text"
-                />
-                <button
-                  onClick={chackServiceability}
-                  className="flex ml-14 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded"
-                >
-                  Check
-                </button>
+              {/* Pincode Check */}
+              <div className="bg-white/50 backdrop-blur-sm rounded-xl p-5 border border-rose-100">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Check Delivery Availability
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    onChange={onChangePin}
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400 text-base bg-white"
+                    placeholder="Enter pincode"
+                    type="text"
+                  />
+                  <button
+                    onClick={chackServiceability}
+                    className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-lg transition-colors duration-200 whitespace-nowrap"
+                  >
+                    Check
+                  </button>
+                </div>
+                {(!service && service != null) && (
+                  <div className="flex items-start gap-2 mt-3 text-red-700 text-sm bg-red-50 p-3 rounded-lg">
+                    <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>Sorry! We do not deliver to this pincode yet.</span>
+                  </div>
+                )}
+                {(service && service != null) && (
+                  <div className="flex items-start gap-2 mt-3 text-green-700 text-sm bg-green-50 p-3 rounded-lg">
+                    <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Great! This pincode is serviceable.</span>
+                  </div>
+                )}
               </div>
-              {(!service && service != null) && (
-                <div className="text-red-700 text-sm mt-3">
-                  Sorry! We do not deliver to this pincode yet.
-                </div>
-              )}
-              {(service && service != null) && (
-                <div className="text-green-700 text-sm mt-3">
-                  Yes! This pincode is serviceable.
-                </div>
-              )}
             </div>
           </div>
 
           {/* Reviews Section */}
-          <div className="lg:w-4/5 mx-auto mt-8">
-            <h3 className="text-2xl font-medium mb-4">Customer reviews</h3>
+          <div className="mt-16 border-t border-rose-100 pt-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8">Customer Reviews</h2>
 
             {reviewsLoading && (
-              <div className="text-gray-600">Loading reviews...</div>
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+              </div>
             )}
 
             {!reviewsLoading && reviewsError && (
-              <div className="text-red-600">{reviewsError}</div>
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
+                {reviewsError}
+              </div>
             )}
 
             {!reviewsLoading && !reviewsError && reviews.length === 0 && (
-              <div className="text-gray-600">No reviews yet. Be the first to review this product!</div>
+              <div className="bg-white/50 backdrop-blur-sm rounded-xl p-12 text-center border border-rose-100">
+                <svg className="w-16 h-16 text-rose-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                <p className="text-gray-600 text-lg">No reviews yet. Be the first to review this product!</p>
+              </div>
             )}
 
             {!reviewsLoading && reviews.length > 0 && (
               <div className="space-y-6">
                 {reviews.map((r) => (
-                  <div key={r._id} className="p-4 border rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold text-gray-800">{r.user?.name || 'Anonymous'}</div>
-                      <div className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</div>
+                  <div key={r._id} className="bg-white/70 backdrop-blur-sm border border-rose-100 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="font-semibold text-gray-900 text-lg mb-1">
+                          {r.user?.name || 'Anonymous'}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star key={i} filled={i < (r.rating || 0)} />
+                          ))}
+                          <span className="text-sm font-medium text-gray-600">
+                            {r.rating ? r.rating : '-'}/5
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(r.createdAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </div>
                     </div>
 
-                    <div className="mb-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} filled={i < (r.rating || 0)} />
-                      ))}
-                      <span className="ml-2 text-sm text-gray-600">{r.rating ? r.rating : '-'}/5</span>
-                    </div>
+                    {r.comment && (
+                      <div className="text-gray-700 leading-relaxed mb-4">
+                        {r.comment}
+                      </div>
+                    )}
 
-                    {r.comment && <div className="text-gray-700 mb-3">{r.comment}</div>}
-
-                    {/* Review images (thumbnails) */}
+                    {/* Review images */}
                     {r.images && r.images.length > 0 && (
-                      <div className="mt-2 flex space-x-3 overflow-x-auto">
+                      <div className="flex gap-3 overflow-x-auto pb-2">
                         {r.images.map((imgUrl, idx) => (
                           <a
                             key={idx}
                             href={imgUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-block"
+                            className="flex-shrink-0 group"
                             title={`Open image ${idx + 1}`}
                           >
                             <img
                               src={imgUrl}
                               alt={`Review image ${idx + 1} by ${r.user?.name || 'user'}`}
-                              className="w-20 h-20 object-cover rounded-md border"
+                              className="w-24 h-24 object-cover rounded-lg border-2 border-rose-100 group-hover:border-rose-400 transition-colors duration-200"
                             />
                           </a>
                         ))}
