@@ -480,9 +480,9 @@ export default function NewProducts({
           return (
             <div
               key={i}
-              className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer border border-gray-100"
+              className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2  border border-gray-100"
             >
-              <Link href={`/product/${product.slug}`}>
+              
                 {/* Image Container - Perfect Square */}
                 <div className="relative w-full aspect-square bg-white overflow-hidden">
                   {/* Subtle overlay on hover */}
@@ -535,7 +535,7 @@ export default function NewProducts({
                 </div>
 
                 {/* Product Info */}
-                <div className="p-4 flex flex-col flex-grow bg-white">
+                <Link href={`/product/${product.slug}`}><div className="p-4 flex flex-col flex-grow bg-white">
                   <h3 className="text-gray-800 font-semibold text-sm mb-2 line-clamp-2 min-h-[40px] leading-relaxed group-hover:text-[#CA7F60] transition-colors">
                     {product.title}
                   </h3>
@@ -555,8 +555,8 @@ export default function NewProducts({
                       )}
                     </div>
                   </div>
-                </div>
-              </Link>
+                </div></Link>
+              
             </div>
           );
         })}
