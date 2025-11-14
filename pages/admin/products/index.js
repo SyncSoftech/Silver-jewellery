@@ -1026,17 +1026,33 @@ export default function Products() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const token = localStorage.getItem('adminToken');
         const response = await fetch('/api/admin/products', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        
         const data = await response.json();
-        setProducts(data);
-        setFilteredProducts(data);
+        
+        // Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setProducts(data);
+          setFilteredProducts(data);
+        } else {
+          console.error('Unexpected API response format:', data);
+          setProducts([]);
+          setFilteredProducts([]);
+        }
       } catch (error) {
         console.error('Error fetching products:', error);
+        setProducts([]);
+        setFilteredProducts([]);
       } finally {
         setLoading(false);
       }
@@ -1172,136 +1188,95 @@ export default function Products() {
   //   if (!formData.title.trim()) { alert('Please enter product title'); return; }
   //   if (!formData.desc.trim()) { alert('Please enter product description'); return; }
   //   if (!formData.img.trim()) { alert('Please upload or paste an image URL'); return; }
-  //   if (!formData.price || Number(formData.price) <= 0) { alert('Please enter a valid price'); return; }
-  //   if (formData.availableQty === '' || parseInt(formData.availableQty, 10) < 0) { alert('Please enter a valid quantity'); return; }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-  //   try {
-  //     const token = localStorage.getItem('adminToken');
-      
-  //     const url = currentProduct 
-  //       ? `/api/admin/products/${currentProduct._id}` 
-  //       : '/api/admin/products';
-      
-  //     const res = await fetch(url, {
-  //       method: currentProduct ? 'PUT' : 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  //       },
-  //       body: JSON.stringify({
-  //         title: formData.title.trim(),
-  //         desc: formData.desc.trim(),
-  //         img: formData.img.trim(),
-  //         images: formData.images.filter(img => img.trim()), // Filter out empty strings
-  //         category: formData.category.trim(),
-  //         size: formData.size.trim(),
-  //         color: formData.color.trim(),
-  //         price: Number(formData.price),
-  //         availableQty: parseInt(formData.availableQty, 10)
-  //       })
-  //     });
-
-  //     const data = await res.json();
-  //     console.log(data)
-  //     if (!res.ok) {
-  //       if (data.errors) {
-  //         const firstErr = Object.values(data.errors)[0];
-  //         alert(firstErr || 'Validation error');
-  //       } else {
-  //         alert(data.error || data.message || 'Failed to save product');
-  //       }
-  //       console.error('API Error:', data);
-  //       return;
-  //     }
-      
-  //     alert('Product saved successfully!');
-      
-  //     if (currentProduct) {
-  //       setProducts(products.map(p => p._id === currentProduct._id ? data.product || data : p));
-  //     } else {
-  //       setProducts([...products, data.product || data]);
-  //     }
-      
-  //     setShowAddModal(false);
-  //     resetForm();
-  //   } catch (err) {
-  //     console.error('Error saving product:', err);
-  //     alert('Failed to save product. See console for details.');
-  //   }
-  // };
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!formData.title.trim()) { alert('Please enter product title'); return; }
-  if (!formData.desc.trim()) { alert('Please enter product description'); return; }
-  if (!formData.img.trim()) { alert('Please upload or paste an image URL'); return; }
-  if (!formData.price || Number(formData.price) <= 0) { alert('Please enter a valid price'); return; }
-  if (formData.availableQty === '' || parseInt(formData.availableQty, 10) < 0) { alert('Please enter a valid quantity'); return; }
-  
-  try {
-    const token = localStorage.getItem('adminToken');
-    
-    const url = currentProduct 
-      ? `/api/admin/products/${currentProduct._id}` 
-      : '/api/admin/products';
-    
-    // Build payload
-    const payload = {
-      title: formData.title.trim(),
-      desc: formData.desc.trim(),
-      img: formData.img.trim(),
-      images: formData.images.filter(img => img.trim()), // empty array allowed
-      category: formData.category.trim(),
-      size: formData.size.trim(),
-      color: formData.color.trim(),
-      price: Number(formData.price),
-      availableQty: parseInt(formData.availableQty, 10)
-    };
-
-    // IMPORTANT: when editing, tell the server to REPLACE images with what we send.
-    // That allows clearing old images by sending [] or replacing them entirely.
-    if (currentProduct) {
-      payload.replaceImages = true;
+    // Basic validation
+    if (!formData.title.trim()) { 
+      alert('Please enter product title'); 
+      return; 
     }
+    if (!formData.desc.trim()) { 
+      alert('Please enter product description'); 
+      return; 
+    }
+    if (!formData.img.trim()) { 
+      alert('Please upload or paste a primary image URL'); 
+      return; 
+    }
+    if (!formData.price || Number(formData.price) <= 0) { 
+      alert('Please enter a valid price'); 
+      return; 
+    }
+    if (formData.availableQty === '' || parseInt(formData.availableQty, 10) < 0) { 
+      alert('Please enter a valid quantity'); 
+      return; 
+    }
+    
+    try {
+      const token = localStorage.getItem('adminToken');
+      const url = currentProduct 
+        ? `/api/admin/products/${currentProduct._id}` 
+        : '/api/admin/products';
+      
+      // Prepare the product data
+      const productData = {
+        title: formData.title.trim(),
+        desc: formData.desc.trim(),
+        img: formData.img.trim(),
+        images: Array.isArray(formData.images) 
+          ? formData.images.filter(img => img && img.trim()) 
+          : [],
+        category: formData.category?.trim() || '',
+        size: formData.size?.trim() || '',
+        color: formData.color?.trim() || '',
+        price: Number(formData.price),
+        availableQty: parseInt(formData.availableQty, 10)
+      };
 
-    const res = await fetch(url, {
-      method: currentProduct ? 'PUT' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    console.log(data)
-    if (!res.ok) {
-      if (data.errors) {
-        const firstErr = Object.values(data.errors)[0];
-        alert(firstErr || 'Validation error');
-      } else {
-        alert(data.error || data.message || 'Failed to save product');
+      // For updates, tell the server to replace existing images
+      if (currentProduct) {
+        productData.replaceImages = true;
       }
-      console.error('API Error:', data);
-      return;
-    }
-    
-    alert('Product saved successfully!');
-    
-    if (currentProduct) {
-      setProducts(products.map(p => p._id === currentProduct._id ? (data.product || data) : p));
-    } else {
-      setProducts([...products, (data.product || data)]);
-    }
-    
-    setShowAddModal(false);
-    resetForm();
-  } catch (err) {
-    console.error('Error saving product:', err);
-    alert('Failed to save product. See console for details.');
-  }
-};
 
+      const response = await fetch(url, {
+        method: currentProduct ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(productData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (data.errors) {
+          const firstErr = Object.values(data.errors)[0];
+          alert(firstErr || 'Validation error');
+        } else {
+          alert(data.error || data.message || 'Failed to save product');
+        }
+        console.error('API Error:', data);
+        return;
+      }
+      
+      // Update the products list
+      if (currentProduct) {
+        setProducts(products.map(p => p._id === currentProduct._id ? (data.product || data) : p));
+      } else {
+        setProducts(prevProducts => [...prevProducts, (data.product || data)]);
+      }
+      
+      alert('Product saved successfully!');
+      setShowAddModal(false);
+      resetForm();
+      
+    } catch (err) {
+      console.error('Error saving product:', err);
+      alert('Failed to save product. See console for details.');
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

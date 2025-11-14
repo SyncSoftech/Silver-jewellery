@@ -12,83 +12,125 @@ const makeSlug = (text = '') =>
 const normalizeProduct = (p) => ({
   _id: p._id,
   name: p.name || p.title || '',
+  title: p.title || p.name || '',
   description: p.description || p.desc || '',
+  desc: p.desc || p.description || '',
   price: typeof p.price === 'number' ? p.price : Number(p.price) || 0,
   category: p.category || '',
   countInStock: typeof p.countInStock === 'number' ? p.countInStock : (p.availableQty || 0),
+  availableQty: p.availableQty !== undefined ? p.availableQty : (p.countInStock || 0),
   image: p.image || p.img || '',
+  img: p.img || p.image || '',
+  images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : (p.img ? [p.img] : [])),
+  size: p.size || '',
+  color: p.color || '',
   slug: p.slug || makeSlug(p.name || p.title || ''),
-  raw: undefined
+  createdAt: p.createdAt,
+  updatedAt: p.updatedAt
 });
 
-const handler = async (req, res) => {
-  if (req.method === 'GET') {
+const coerceImages = (images) => {
+  if (!images) return [];
+  if (Array.isArray(images)) return images.map(String).map(s => s.trim()).filter(Boolean);
+  if (typeof images === 'string') {
+    // try JSON parse (client may send JSON-stringified array)
     try {
-      const products = await Product.find({});
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) return parsed.map(String).map(s => s.trim()).filter(Boolean);
+    } catch (e) {
+      // not JSON
+    }
+    // CSV fallback
+    return images.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+const handler = async (req, res) => {
+  const { method } = req;
+
+  if (method === 'GET') {
+    try {
+      // Optionally support simple query filters in future (category, q, etc.)
+      const products = await Product.find({}).sort({ createdAt: -1 }).lean();
       return res.status(200).json(products.map(normalizeProduct));
     } catch (error) {
-      console.error('Error fetching products:', error);
-      return res.status(500).json({ error: 'Error fetching products' });
+      console.error('Error listing products:', error);
+      return res.status(500).json({ success: false, error: 'Error fetching products' });
     }
   }
 
-  if (req.method === 'POST') {
+  if (method === 'POST') {
     try {
-      // Debug: log incoming body to quickly see what client sent
-      console.log('POST /api/admin/products body:', JSON.stringify(req.body || {}));
-
-      // Accept frontend-friendly fields (be forgiving)
+      // Accept flexible input
       const {
-        name = '',
-        title = '',
-        description = '',
-        desc = '',
+        name,
+        title,
+        description,
+        desc,
         price,
-        category = '',
+        category,
         countInStock,
         availableQty,
-        image = '',
-        img = '',
-        slug: incomingSlug
+        image,   // single image URL
+        img,     // legacy
+        images,  // array or string
+        slug,
+        size,
+        color
       } = req.body || {};
 
-      // Prefer name/title, description/desc, image/img fields
-      const finalName = (name || title || '').toString().trim();
+      // Normalize fields
+      const finalTitle = (title || name || '').toString().trim();
       const finalDesc = (description || desc || '').toString().trim();
-      const finalImg = (image || img || '').toString().trim();
-      const finalPrice = price !== undefined && price !== null ? Number(price) : 0;
-      const finalCount = countInStock !== undefined && countInStock !== null ? parseInt(countInStock, 10) : (availableQty !== undefined ? parseInt(availableQty, 10) : 0);
+      const finalCategory = category !== undefined && category !== null ? String(category).trim() : '';
+      const finalPrice = (price !== undefined && price !== null && price !== '') ? Number(price) : NaN;
+      const finalQty = parseInt(availableQty ?? countInStock ?? '0', 10);
 
-      // Server-side validation
+      // Build images list: coerce incoming plus single image fallback
+      const incoming = coerceImages(images);
+      const singleImg = (image || img || '').toString().trim();
+      if (singleImg) incoming.unshift(singleImg); // prefer single image if provided
+      const imagesArray = Array.from(new Set(incoming.filter(Boolean))); // dedupe
+
+      // Primary image — prefer provided single image or first of imagesArray
+      const primaryImg = singleImg || (imagesArray.length ? imagesArray[0] : '');
+
+      // Validation
       const errors = {};
-      if (!finalName) errors.title = 'Title (name) is required';
-      if (!incomingSlug && !finalName) errors.slug = 'Slug is required (or provide a title to auto-generate)';
+      if (!finalTitle) errors.title = 'Title is required';
       if (!finalDesc) errors.desc = 'Description is required';
-      if (!finalImg) errors.img = 'Image URL is required';
-      if (!category || !String(category).trim()) errors.category = 'Category is required';
+      if (!primaryImg) errors.img = 'Primary image (image or img or images) is required';
+      if (!finalCategory) errors.category = 'Category is required';
       if (Number.isNaN(finalPrice) || finalPrice <= 0) errors.price = 'Valid price is required';
-      if (Number.isNaN(finalCount) || finalCount < 0) errors.availableQty = 'Valid available quantity is required';
+      if (Number.isNaN(finalQty) || finalQty < 0) errors.availableQty = 'Valid available quantity is required';
 
       if (Object.keys(errors).length) {
         return res.status(400).json({ success: false, errors });
       }
 
+      const slugValue = slug && String(slug).trim() ? String(slug).trim() : makeSlug(finalTitle);
+
       const productData = {
-        title: finalName,
-        slug: incomingSlug?.toString().trim() || makeSlug(finalName),
+        title: finalTitle,
         desc: finalDesc,
-        img: finalImg,
-        category: String(category).trim(),
-        price: finalPrice,
-        availableQty: finalCount
+        category: finalCategory,
+        price: Number(finalPrice),
+        availableQty: Number.isFinite(finalQty) ? finalQty : 0,
+        img: primaryImg,
+        images: imagesArray,
+        size: size ? String(size).trim() : undefined,
+        color: color ? String(color).trim() : undefined,
+        slug: slugValue
       };
 
-      const createdProduct = await Product.create(productData);
-      return res.status(201).json({ success: true, product: normalizeProduct(createdProduct) });
+      // Debug log (remove in production if noisy)
+      console.log('Creating product with data:', JSON.stringify(productData));
+
+      const created = await Product.create(productData);
+      return res.status(201).json({ success: true, product: normalizeProduct(created) });
     } catch (error) {
       console.error('Error creating product:', error);
-
-      // If mongoose validation error, return 400 with its messages
       if (error && error.name === 'ValidationError') {
         const mongooseErrors = Object.keys(error.errors || {}).reduce((acc, key) => {
           acc[key] = error.errors[key].message;
@@ -96,91 +138,12 @@ const handler = async (req, res) => {
         }, {});
         return res.status(400).json({ success: false, errors: mongooseErrors });
       }
-
-      return res.status(500).json({ success: false, message: 'Error creating product' });
+      return res.status(500).json({ success: false, error: 'Error creating product' });
     }
   }
 
-  if (req.method === 'PUT') {
-    try {
-      const { title, desc, img, category, size, color, price, availableQty, productId, addStock } = req.body;
-
-      // Check if this is a stock-only update (addStock mode)
-      if (addStock !== undefined && addStock !== null) {
-        if (!productId) {
-          return res.status(400).json({ success: false, error: 'Product ID is required for stock update' });
-        }
-
-        const qtyToAdd = parseInt(addStock, 10);
-        if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
-          return res.status(400).json({ success: false, error: 'Stock quantity must be greater than 0' });
-        }
-
-        // Atomically increase stock
-        const updatedProduct = await Product.findByIdAndUpdate(
-          productId,
-          { $inc: { availableQty: qtyToAdd } },
-          { new: true, runValidators: false }
-        );
-
-        if (!updatedProduct) {
-          return res.status(404).json({ success: false, error: 'Product not found' });
-        }
-
-        return res.status(200).json({
-          success: true,
-          product: normalizeProduct(updatedProduct),
-          message: `Stock increased by ${qtyToAdd}`,
-          stockAdded: qtyToAdd,
-          newStock: updatedProduct.availableQty
-        });
-      }
-
-      // Otherwise, this is a full product update from admin panel
-      // Validate required fields
-      const errors = {};
-      if (!title || !String(title).trim()) errors.title = 'Title is required';
-      if (!desc || !String(desc).trim()) errors.desc = 'Description is required';
-      if (!img || !String(img).trim()) errors.img = 'Image URL is required';
-      if (!category || !String(category).trim()) errors.category = 'Category is required';
-      if (price === undefined || price === null || Number.isNaN(Number(price)) || Number(price) <= 0) {
-        errors.price = 'Valid price is required';
-      }
-      if (availableQty === undefined || availableQty === null || Number.isNaN(parseInt(availableQty, 10)) || parseInt(availableQty, 10) < 0) {
-        errors.availableQty = 'Valid available quantity is required';
-      }
-
-      if (Object.keys(errors).length) {
-        return res.status(400).json({ success: false, errors });
-      }
-
-      const updateData = {
-        title: String(title).trim(),
-        desc: String(desc).trim(),
-        img: String(img).trim(),
-        category: String(category).trim(),
-        price: Number(price),
-        availableQty: parseInt(availableQty, 10)
-      };
-
-      // Add optional fields if provided
-      if (size) updateData.size = String(size).trim();
-      if (color) updateData.color = String(color).trim();
-
-      // This endpoint doesn't handle product ID in URL, so we can't update by ID
-      // The admin panel should use /api/admin/products/[id] for updates
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Use PUT /api/admin/products/[id] to update existing products' 
-      });
-    } catch (error) {
-      console.error('Error in PUT /api/admin/products:', error);
-      return res.status(500).json({ success: false, error: 'Error processing request' });
-    }
-  }
-
-  res.setHeader('Allow', ['GET', 'POST', 'PUT']);
-  return res.status(405).end(`Method ${req.method} Not Allowed`);
+  res.setHeader('Allow', ['GET', 'POST']);
+  return res.status(405).end(`Method ${method} Not Allowed`);
 };
 
 export default connectDb(handler);
