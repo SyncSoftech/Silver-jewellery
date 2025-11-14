@@ -433,10 +433,16 @@ export default function NewProducts({
     }
   };
 
-  const handleBuyNow = (product, e) => {
+ const handleBuyNow = (product, e) => {
     e.stopPropagation();
-    if (buyNow) {
-      buyNow(product._id, 1, product.price, product.title, product.size || 'M', product.variant || 'Default', product.img);
+    // If you still want to call buyNow logic, uncomment next line:
+    // if (buyNow) buyNow(product._id, 1, product.price, product.title, product.size || 'M', product.variant || 'Default', product.img);
+
+    // Navigate to product page (slug)
+    if (product && product.slug) {
+      router.push(`/product/${product.slug}`);
+    } else {
+      console.warn("Product slug missing for", product);
     }
   };
 
