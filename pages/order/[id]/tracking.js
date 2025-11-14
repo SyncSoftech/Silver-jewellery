@@ -2732,544 +2732,1072 @@
 
 
 
+// // pages/order/[id]/tracking.js
+// import { useEffect, useState } from 'react';
+// import { useRouter } from 'next/router';
+// import { format } from 'date-fns';
+// import Link from 'next/link';
+// import jwt from 'jsonwebtoken';
+
+// export default function OrderTrackingPage() {
+//   const router = useRouter();
+//   const { id } = router.query;
+//   const [timeline, setTimeline] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [showReviewModal, setShowReviewModal] = useState(false);
+//   const [reviewData, setReviewData] = useState({
+//     rating: 5,
+//     comment: '',
+//     images: [],
+//   });
+
+//   const [uploadingImages, setUploadingImages] = useState(false);
+//   const [uploadError, setUploadError] = useState('');
+//   const [order, setOrder] = useState(null);
+//   const [cancelling, setCancelling] = useState(false);
+
+//   // Replace-request specific state
+//   const [showReplaceModal, setShowReplaceModal] = useState(false);
+//   const [replaceReason, setReplaceReason] = useState('');
+//   const [replaceItems, setReplaceItems] = useState([]); // { product, name, qty, selected }
+
+//   // Replace images state (for replacement flow)
+//   const [replaceUploadingImages, setReplaceUploadingImages] = useState(false);
+//   const [replaceUploadError, setReplaceUploadError] = useState('');
+//   const [replaceImages, setReplaceImages] = useState([]); // urls
+
+//   useEffect(() => {
+//     if (!id) return;
+//     setLoading(true);
+
+//     const fetchData = async () => {
+//       try {
+//         const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+//         const headers = {};
+//         if (token) headers['Authorization'] = `Bearer ${token}`;
+
+//         const [trackingRes, orderRes] = await Promise.all([
+//           fetch(`/api/orders/${id}/track`, { headers }),
+//           fetch(`/api/orders/${id}`, { headers })
+//         ]);
+
+//         // Tracking
+//         if (trackingRes.ok) {
+//           const trackingData = await trackingRes.json();
+//           const eventsArray = Array.isArray(trackingData) ? trackingData : (trackingData.timeline || []);
+//           setTimeline(eventsArray);
+
+//           const lastEvent = eventsArray.length ? eventsArray[eventsArray.length - 1] : null;
+//           if (lastEvent?.status?.toLowerCase() === 'delivered') {
+//             const reviewSubmitted = localStorage.getItem(`review_submitted_${id}`);
+//             if (!reviewSubmitted) setShowReviewModal(true);
+//           }
+//         } else {
+//           console.error('Failed to fetch tracking:', trackingRes.status, trackingRes.statusText);
+//           setTimeline([]);
+//         }
+
+//         // Order
+//         if (orderRes.ok) {
+//           const orderData = await orderRes.json();
+//           const processedOrder = orderData.order || orderData.data?.order || orderData.data || orderData;
+//           setOrder(processedOrder);
+
+//           // prepare replace items selection state if present
+//           const items = (processedOrder?.orderItems || []).map(it => ({
+//             product: it.product,
+//             name: it.name,
+//             qty: it.quantity,
+//             selected: false
+//           }));
+//           setReplaceItems(items);
+//         } else {
+//           console.error('Failed to fetch order:', orderRes.status, orderRes.statusText);
+//           setOrder(null);
+//           setReplaceItems([]);
+//         }
+//       } catch (e) {
+//         console.error('Error fetching data:', e);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchData();
+//   }, [id]);
+
+//   // Upload multiple files to /api/upload/cloudinary and return uploaded URLs
+//   const uploadFilesToCloudinary = async (files) => {
+//     // This function is reused for both review images and replace images
+//     try {
+//       // Choose which uploading flags to set dynamically when called by callers
+//       // (Callers will set their own local uploading flags around this call)
+//       const token = localStorage.getItem('token') || localStorage.getItem('adminToken') || null;
+
+//       const uploadPromises = files.map((file) => {
+//         const formData = new FormData();
+//         formData.append('image', file);
+
+//         return fetch('/api/upload/cloudinary', {
+//           method: 'POST',
+//           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+//           body: formData,
+//         })
+//           .then(async (res) => {
+//             const data = await res.json();
+//             if (!res.ok) {
+//               const msg = data?.error || data?.message || 'Upload failed';
+//               throw new Error(msg);
+//             }
+//             return data?.secure_url || data?.url || (data.result && data.result.secure_url) || data?.raw?.secure_url;
+//           });
+//       });
+
+//       const urls = await Promise.all(uploadPromises);
+//       return urls;
+//     } catch (err) {
+//       console.error('Image upload error:', err);
+//       throw err;
+//     }
+//   };
+
+//   // REVIEW image change handler (unchanged behavior)
+//   const handleImageChange = async (e) => {
+//     const files = Array.from(e.target.files || []);
+//     if (files.length === 0) return;
+
+//     const invalid = files.find((f) => !f.type.startsWith('image/'));
+//     if (invalid) {
+//       setUploadError('One or more files are not images. Please select images only.');
+//       return;
+//     }
+//     const tooLarge = files.find((f) => f.size > 5 * 1024 * 1024);
+//     if (tooLarge) {
+//       setUploadError('One or more images exceed 5MB. Please choose smaller files.');
+//       return;
+//     }
+
+//     setUploadError('');
+//     setUploadingImages(true);
+//     try {
+//       const urls = await uploadFilesToCloudinary(files);
+//       setReviewData((prev) => ({ ...prev, images: (prev.images || []).concat(urls) }));
+//       setUploadError('');
+//     } catch (err) {
+//       setUploadError(err.message || 'Failed to upload images');
+//     } finally {
+//       setUploadingImages(false);
+//     }
+//   };
+
+//   // REPLACE image change handler (new)
+//   const handleReplaceImageChange = async (e) => {
+//     const files = Array.from(e.target.files || []);
+//     if (files.length === 0) return;
+
+//     const invalid = files.find((f) => !f.type.startsWith('image/'));
+//     if (invalid) {
+//       setReplaceUploadError('One or more files are not images. Please select images only.');
+//       return;
+//     }
+//     const tooLarge = files.find((f) => f.size > 5 * 1024 * 1024);
+//     if (tooLarge) {
+//       setReplaceUploadError('One or more images exceed 5MB. Please choose smaller files.');
+//       return;
+//     }
+
+//     setReplaceUploadError('');
+//     setReplaceUploadingImages(true);
+//     try {
+//       const urls = await uploadFilesToCloudinary(files);
+//       setReplaceImages(prev => (prev || []).concat(urls));
+//       setReplaceUploadError('');
+//     } catch (err) {
+//       console.error('Replace image upload error:', err);
+//       setReplaceUploadError(err.message || 'Failed to upload replace images');
+//     } finally {
+//       setReplaceUploadingImages(false);
+//     }
+//   };
+
+//   const handleSubmitReview = async () => {
+//     if (uploadingImages) {
+//       alert('Please wait for image uploads to finish before submitting your review.');
+//       return;
+//     }
+
+//     if (!reviewData.comment?.trim()) {
+//       if (!confirm('Submit review without a comment?')) return;
+//     }
+
+//     try {
+//       const rawToken = localStorage.getItem('token') || localStorage.getItem('adminToken');
+//       let userId = null;
+//       if (rawToken) {
+//         const decoded = jwt.decode(rawToken);
+//         userId = decoded?.user || decoded?.id || decoded?.sub || null;
+//       }
+
+//       const productId = order?.orderItems?.[0]?.product;
+//       if (!productId) {
+//         throw new Error('Could not find product information for this order. Please contact support.');
+//       }
+
+//       const body = {
+//         productId,
+//         userId,
+//         rating: Number(reviewData.rating),
+//         comment: reviewData.comment,
+//         images: reviewData.images,
+//       };
+
+//       const res = await fetch('/api/review/addreview', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           ...(rawToken && { 'Authorization': `Bearer ${rawToken}` })
+//         },
+//         body: JSON.stringify(body),
+//       });
+
+//       const data = await res.json();
+//       if (data.success) {
+//         localStorage.setItem(`review_submitted_${id}`, 'true');
+//         alert('Review added successfully!');
+//         setShowReviewModal(false);
+//         setReviewData({ rating: 5, comment: '', images: [] });
+//       } else {
+//         throw new Error(data?.message || 'Failed to add review');
+//       }
+//     } catch (err) {
+//       console.error('Review submission error:', err);
+//       alert(err.message || 'Error submitting review');
+//     }
+//   };
+
+//   const handleCancelReview = () => {
+//     localStorage.setItem(`review_submitted_${id}`, 'declined');
+//     setShowReviewModal(false);
+//   };
+
+//   const handleCancelOrder = async () => {
+//     if (!window.confirm('Are you sure you want to cancel this order?')) {
+//       return;
+//     }
+
+//     setCancelling(true);
+//     try {
+//       const token = localStorage.getItem('token');
+//       if (!token) {
+//         throw new Error('Please log in to cancel the order');
+//       }
+
+//       const res = await fetch(`/api/orders/cancel`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`
+//         },
+//         body: JSON.stringify({ orderId: id }),
+//       });
+
+//       if (res.ok) {
+//         // Refresh the order status using GET on cancel endpoint
+//         const orderRes = await fetch(`/api/orders/cancel?orderId=${encodeURIComponent(id)}`, {
+//           headers: { Authorization: `Bearer ${token}` }
+//         });
+
+//         if (orderRes.ok) {
+//           const data = await orderRes.json();
+//           const refreshedOrder = data.order || data;
+//           setOrder(refreshedOrder);
+//         }
+
+//         // Refresh timeline as well
+//         const trackingRes = await fetch(`/api/orders/${id}/track`, {
+//           headers: {
+//             'Authorization': `Bearer ${token}`
+//           }
+//         });
+//         if (trackingRes.ok) {
+//           setTimeline(await trackingRes.json());
+//         }
+
+//         alert('Order has been cancelled successfully');
+//       } else {
+//         const error = await res.json();
+//         throw new Error(error.error || 'Failed to cancel order');
+//       }
+//     } catch (err) {
+//       console.error('Error cancelling order:', err);
+//       alert(err.message || 'Error cancelling order');
+//     } finally {
+//       setCancelling(false);
+//     }
+//   };
+
+//   // Replace request flow
+//   const openReplaceModal = () => {
+//     // reset selection: deselect all then preselect first item by default
+//     const items = (order?.orderItems || []).map(it => ({
+//       product: it.product,
+//       name: it.name,
+//       qty: it.quantity,
+//       selected: false
+//     }));
+//     setReplaceItems(items);
+//     setReplaceReason('');
+//     setReplaceImages([]); // reset any previous replace images
+//     setReplaceUploadError('');
+//     setShowReplaceModal(true);
+//   };
+
+//   const toggleItemSelection = (index) => {
+//     setReplaceItems(prev => prev.map((it, i) => i === index ? { ...it, selected: !it.selected } : it));
+//   };
+
+//   const setItemQty = (index, newQty) => {
+//     setReplaceItems(prev => prev.map((it, i) => i === index ? { ...it, qty: newQty } : it));
+//   };
+
+//   const submitReplaceRequest = async () => {
+//     try {
+//       const token = localStorage.getItem('token');
+//       if (!token) throw new Error('Please log in to request a replacement');
+
+//       if (replaceUploadingImages) {
+//         alert('Please wait for replace image uploads to finish before submitting.');
+//         return;
+//       }
+
+//       const itemsToReplace = replaceItems.filter(i => i.selected).map(i => ({ productId: i.product, qty: Number(i.qty) || 1 }));
+//       if (itemsToReplace.length === 0) {
+//         alert('Please select at least one item to replace.');
+//         return;
+//       }
+
+//       // Build body and include replace images URLs if any
+//       const body = {
+//         orderId: id,
+//         items: itemsToReplace,
+//         reason: replaceReason,
+//         replaceRequestImages: replaceImages // may be empty array
+//       };
+
+//       const res = await fetch('/api/orders/replace', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`
+//         },
+//         body: JSON.stringify(body)
+//       });
+
+//       const data = await res.json();
+//       if (!res.ok) {
+//         throw new Error(data?.error || data?.message || 'Failed to submit replace request');
+//       }
+
+//       alert(data.message || 'Replace request submitted');
+//       setShowReplaceModal(false);
+//       setReplaceReason('');
+//       setReplaceImages([]);
+
+//       // Refresh order and timeline
+//       const [orderRes, trackRes] = await Promise.all([
+//         fetch(`/api/orders/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+//         fetch(`/api/orders/${id}/track`, { headers: { Authorization: `Bearer ${token}` } })
+//       ]);
+
+//       if (orderRes.ok) {
+//         const od = await orderRes.json();
+//         const processedOrder = od.order || od.data?.order || od.data || od;
+//         setOrder(processedOrder);
+//       }
+
+//       if (trackRes.ok) {
+//         const tr = await trackRes.json();
+//         setTimeline(Array.isArray(tr) ? tr : (tr.timeline || []));
+//       }
+//     } catch (err) {
+//       console.error('Replace request error:', err);
+//       alert(err.message || 'Error submitting replace request');
+//     }
+//   };
+
+//   // FIXED: Cancellation logic
+//   const cancellableStatuses = ['pending', 'processing', 'paid'];
+//   const nonCancellableStatuses = ['shipped', 'delivered', 'cancelled'];
+//   const status = (order?.status || '').toLowerCase().trim();
+
+//   // Check if timeline has shipped or delivered status
+//   const isShipped = timeline.some(e => {
+//     const evtStatus = (e.status || '').toLowerCase().trim();
+//     return evtStatus === 'shipped' || evtStatus === 'delivered';
+//   });
+
+//   // Check if the last event in timeline is delivered
+//   const lastEvent = timeline.length > 0 ? timeline[timeline.length - 1] : null;
+//   const isDelivered = lastEvent?.status?.toLowerCase().trim() === 'delivered';
+
+//   // Order can be cancelled if:
+//   // 1. Order exists
+//   // 2. Status is in cancellable list
+//   // 3. Status is NOT in non-cancellable list
+//   // 4. Timeline doesn't show it's been shipped or delivered
+//   // 5. Not delivered
+//   const canCancelOrder =
+//     !!order &&
+//     cancellableStatuses.includes(status) &&
+//     !nonCancellableStatuses.includes(status) &&
+//     !isShipped &&
+//     !isDelivered;
+
+//   // Show "Request Replacement" button only when delivered
+//   const canRequestReplace = !!order && isDelivered && status !== 'cancelled';
+
+//   return (
+//     <div className="p-6 max-w-3xl mx-auto">
+//       <div className="mb-4">
+//         <Link href="/" className="text-indigo-600">Home</Link>
+//       </div>
+//       <h1 className="text-2xl font-bold mb-4">Order Tracking</h1>
+
+//       {loading ? (
+//         <div>Loading...</div>
+//       ) : (
+//         <>
+//           <div className="flex justify-between items-center mb-4">
+//             <p>Timeline for order <strong>#{id}</strong></p>
+
+//             {/* Show cancelled message if order.status === 'Cancelled' */}
+//             {status === 'cancelled' && (
+//               <div className="px-4 py-2 bg-gray-100 text-red-600 rounded">
+//                 This order has been <strong>Cancelled</strong>.
+//               </div>
+//             )}
+
+//             <div className="flex items-center gap-3">
+//               {/* Cancel button - only show if order can be cancelled */}
+//               {canCancelOrder && (
+//                 <button
+//                   onClick={handleCancelOrder}
+//                   disabled={cancelling}
+//                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400"
+//                 >
+//                   {cancelling ? 'Cancelling...' : 'Cancel Order'}
+//                 </button>
+//               )}
+
+//               {/* Request Replacement - show only when delivered */}
+//               {canRequestReplace && (
+//                 <button
+//                   onClick={openReplaceModal}
+//                   className="px-4 py-2 bg-yellow-500 text-black rounded hover:brightness-95"
+//                 >
+//                   Request Replacement
+//                 </button>
+//               )}
+
+//               {/* If cannot cancel because it's shipped or delivered */}
+//               {!canCancelOrder && order && (status === 'shipped' || status === 'delivered' || isShipped) && status !== 'cancelled' && (
+//                 <div className="text-sm text-gray-500">
+//                   Order cannot be cancelled as it has already been {status === 'delivered' ? 'delivered' : 'shipped'}
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           {timeline.length === 0 ? (
+//             <p>No tracking events yet.</p>
+//           ) : (
+//             <ul className="space-y-4">
+//               {timeline.map((evt, i) => (
+//                 <li key={evt._id ?? evt.createdAt ?? i} className="border rounded p-4">
+//                   <div className="flex justify-between">
+//                     <div>
+//                       <div className="font-medium">
+//                         {(evt.status || '').charAt(0).toUpperCase() + (evt.status || '').slice(1)}
+//                       </div>
+//                       {evt.note && <div className="text-gray-600">{evt.note}</div>}
+//                       {evt.carrier && (
+//                         <div className="text-sm text-gray-600">
+//                           Carrier: {evt.carrier} — {evt.trackingNumber}
+//                         </div>
+//                       )}
+//                       {evt.trackingUrl && (
+//                         <div className="text-sm">
+//                           <Link target="_blank" rel="noreferrer" href={evt.trackingUrl} className="text-indigo-600">
+//                             Track shipment
+//                           </Link>
+//                         </div>
+//                       )}
+
+//                       {/* Show replace/request images if present on the event */}
+//                       {Array.isArray(evt.replaceRequestImages) && evt.replaceRequestImages.length > 0 && (
+//                         <div className="mt-2 flex gap-2 flex-wrap">
+//                           {evt.replaceRequestImages.map((img, idx) => (
+//                             <a key={idx} href={img} target="_blank" rel="noreferrer">
+//                               <img src={img} alt={`evt-img-${idx}`} className="w-20 h-20 object-cover rounded border" />
+//                             </a>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+//                     <div className="text-sm text-gray-500">
+//                       {evt.createdAt ? format(new Date(evt.createdAt), 'PPP p') : ''}
+//                     </div>
+//                   </div>
+//                 </li>
+//               ))}
+//             </ul>
+//           )}
+//         </>
+//       )}
+
+//       {/* Replace modal */}
+//       {showReplaceModal && (
+//         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+//           <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+//             <h2 className="text-lg font-semibold mb-4">Request Replacement</h2>
+
+//             <p className="mb-3 text-sm text-gray-600">Select items to replace, optionally upload images, and provide a reason. Our team will review your request.</p>
+
+//             <div className="space-y-3 mb-3 max-h-36 overflow-auto">
+//               {replaceItems.length === 0 && <div className="text-sm text-gray-500">No items found for this order.</div>}
+//               {replaceItems.map((it, i) => (
+//                 <div key={i} className="flex items-center gap-3 border p-2 rounded">
+//                   <input type="checkbox" checked={it.selected} onChange={() => toggleItemSelection(i)} />
+//                   <div className="flex-1">
+//                     <div className="font-medium">{it.name}</div>
+//                     <div className="text-sm text-gray-600">Ordered quantity: {it.qty}</div>
+//                   </div>
+//                   <div className="flex items-center gap-2">
+//                     <label className="text-sm">Qty</label>
+//                     <input
+//                       type="number"
+//                       min="1"
+//                       value={it.qty}
+//                       onChange={(e) => setItemQty(i, Math.max(1, Number(e.target.value || 1)))}
+//                       className="w-20 border rounded p-1"
+//                     />
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+
+//             <label className="block mb-2 font-medium">Reason</label>
+//             <textarea
+//               value={replaceReason}
+//               onChange={(e) => setReplaceReason(e.target.value)}
+//               rows="3"
+//               className="border rounded w-full p-2 mb-4"
+//               placeholder="Explain why you want a replacement (e.g. damaged, wrong item, missing part)..."
+//             />
+
+//             <label className="block mb-2 font-medium">Upload Images (optional)</label>
+//             <input
+//               type="file"
+//               multiple
+//               accept="image/*"
+//               onChange={handleReplaceImageChange}
+//               className="mb-2"
+//               disabled={replaceUploadingImages}
+//             />
+//             {replaceUploadError && (
+//               <div className="text-sm text-red-600 mb-2">{replaceUploadError}</div>
+//             )}
+
+//             <div className="flex gap-2 mb-4 flex-wrap">
+//               {replaceImages.map((img, i) => (
+//                 <div key={i} className="relative">
+//                   <img src={img} alt={`replace-preview-${i}`} className="w-16 h-16 object-cover rounded" />
+//                 </div>
+//               ))}
+//             </div>
+
+//             <div className="flex justify-end gap-3">
+//               <button onClick={() => setShowReplaceModal(false)} className="px-4 py-2 border rounded text-gray-600">Close</button>
+//               <button
+//                 onClick={submitReplaceRequest}
+//                 className="px-4 py-2 bg-yellow-500 text-black rounded"
+//                 disabled={replaceUploadingImages}
+//               >
+//                 {replaceUploadingImages ? 'Uploading images...' : 'Submit Request'}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Review modal (unchanged) */}
+//       {showReviewModal && (
+//         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+//           <div className="bg-white rounded-lg p-6 w-full max-w-md">
+//             <h2 className="text-lg font-semibold mb-4">Add Review</h2>
+//             <label className="block mb-2 font-medium">Rating:</label>
+//             <select
+//               value={reviewData.rating}
+//               onChange={(e) => setReviewData({ ...reviewData, rating: Number(e.target.value) })}
+//               className="border rounded w-full mb-4 p-2"
+//             >
+//               {[5, 4, 3, 2, 1].map((r) => (
+//                 <option key={r} value={r}>{r} Star{r > 1 ? 's' : ''}</option>
+//               ))}
+//             </select>
+
+//             <label className="block mb-2 font-medium">Comment:</label>
+//             <textarea
+//               value={reviewData.comment}
+//               onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+//               className="border rounded w-full p-2 mb-4"
+//               placeholder="Write your review..."
+//               rows="3"
+//             />
+
+//             <label className="block mb-2 font-medium">Upload Images:</label>
+//             <input
+//               type="file"
+//               multiple
+//               accept="image/*"
+//               onChange={handleImageChange}
+//               className="mb-4"
+//               disabled={uploadingImages}
+//             />
+//             {uploadError && (
+//               <div className="text-sm text-red-600 mb-2">{uploadError}</div>
+//             )}
+
+//             <div className="flex gap-2 mb-4 flex-wrap">
+//               {reviewData.images.map((img, i) => (
+//                 <img key={i} src={img} alt={`preview-${i}`} className="w-16 h-16 object-cover rounded" />
+//               ))}
+//             </div>
+
+//             <div className="flex justify-end gap-3">
+//               <button
+//                 onClick={handleCancelReview}
+//                 className="px-4 py-2 border rounded text-gray-600"
+//                 disabled={uploadingImages}
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 onClick={handleSubmitReview}
+//                 className="px-4 py-2 bg-indigo-600 text-white rounded"
+//                 disabled={uploadingImages}
+//               >
+//                 {uploadingImages ? 'Uploading images...' : 'Submit'}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
 // pages/order/[id]/tracking.js
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import jwt from 'jsonwebtoken';
 
-export default function OrderTrackingPage() {
+// Helper fetch with token
+function fetchWithAuth(url, options = {}) {
+  const token = typeof window !== "undefined"
+    ? localStorage.getItem("token") || localStorage.getItem("adminToken")
+    : null;
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+  });
+}
+
+// Modal Wrapper
+const ModalShell = ({ title, onClose, children }) => (
+  <div className="fixed inset-0 bg-black/40 flex justify-center items-center p-4 z-50">
+    <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-lg">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+        <button className="text-gray-500" onClick={onClose}>✕</button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
+// Timeline component
+const TimelineItem = ({ evt }) => (
+  <li className="border rounded-lg p-4 bg-white">
+    <div className="flex flex-col sm:flex-row justify-between gap-3">
+      <div>
+        <p className="font-medium text-gray-800">
+          {(evt.status || "").charAt(0).toUpperCase() + (evt.status || "").slice(1)}
+        </p>
+        {evt.note && <p className="text-gray-600 mt-1">{evt.note}</p>}
+        {evt.carrier && (
+          <p className="text-sm text-gray-600 mt-1">
+            Carrier: {evt.carrier} — {evt.trackingNumber}
+          </p>
+        )}
+        {evt.trackingUrl && (
+          <p className="text-sm mt-1">
+            <Link
+              href={evt.trackingUrl}
+              target="_blank"
+              className="text-indigo-600 hover:underline"
+            >
+              Track shipment
+            </Link>
+          </p>
+        )}
+
+        {/* replacement images */}
+        {Array.isArray(evt.replaceRequestImages) && evt.replaceRequestImages.length > 0 && (
+          <div className="mt-2 flex gap-2 flex-wrap">
+            {evt.replaceRequestImages.map((img, i) => (
+              <a key={i} href={img} target="_blank">
+                <img src={img} alt="replace" className="w-20 h-20 rounded border object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p className="text-sm text-gray-500 whitespace-nowrap">
+        {evt.createdAt ? format(new Date(evt.createdAt), "PPP p") : ""}
+      </p>
+    </div>
+  </li>
+);
+
+export default function TrackingPage() {
   const router = useRouter();
   const { id } = router.query;
+
+  const [order, setOrder] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewData, setReviewData] = useState({
-    rating: 5,
-    comment: '',
-    images: [],
-  });
 
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [order, setOrder] = useState(null);
+  // Review modal state
+  const [showReview, setShowReview] = useState(false);
+  const [reviewData, setReviewData] = useState({ rating: 5, comment: "", images: [] });
+  const [uploadingReview, setUploadingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+
+  // Replacement modal
+  const [showReplace, setShowReplace] = useState(false);
+  const [replaceItems, setReplaceItems] = useState([]);
+  const [replaceReason, setReplaceReason] = useState("");
+  const [replaceImages, setReplaceImages] = useState([]);
+  const [uploadingReplace, setUploadingReplace] = useState(false);
+  const [replaceError, setReplaceError] = useState("");
+
   const [cancelling, setCancelling] = useState(false);
 
-  // Replace-request specific state
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [replaceReason, setReplaceReason] = useState('');
-  const [replaceItems, setReplaceItems] = useState([]); // { product, name, qty, selected }
+  // Upload images reusable
+  const uploadToCloudinary = async (files) => {
+    const token = localStorage.getItem("token") || localStorage.getItem("adminToken");
 
-  // Replace images state (for replacement flow)
-  const [replaceUploadingImages, setReplaceUploadingImages] = useState(false);
-  const [replaceUploadError, setReplaceUploadError] = useState('');
-  const [replaceImages, setReplaceImages] = useState([]); // urls
+    const uploads = files.map((file) => {
+      const form = new FormData();
+      form.append("image", file);
 
-  useEffect(() => {
-    if (!id) return;
+      return fetch("/api/upload/cloudinary", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form
+      })
+        .then((res) => res.json())
+        .then((d) => {
+          if (!d?.secure_url) throw new Error("Upload failed");
+          return d.secure_url;
+        });
+    });
+
+    return Promise.all(uploads);
+  };
+
+  // Load order + tracking
+  const loadData = useCallback(async () => {
     setLoading(true);
+    try {
+      const [tRes, oRes] = await Promise.all([
+        fetchWithAuth(`/api/orders/${id}/track`),
+        fetchWithAuth(`/api/orders/${id}`)
+      ]);
 
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
-        const headers = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+      const tJson = tRes.ok ? await tRes.json() : [];
+      setTimeline(Array.isArray(tJson) ? tJson : tJson.timeline || []);
 
-        const [trackingRes, orderRes] = await Promise.all([
-          fetch(`/api/orders/${id}/track`, { headers }),
-          fetch(`/api/orders/${id}`, { headers })
-        ]);
+      const oJson = oRes.ok ? await oRes.json() : null;
+      const ord = oJson?.order || oJson?.data?.order || oJson;
+      setOrder(ord);
 
-        // Tracking
-        if (trackingRes.ok) {
-          const trackingData = await trackingRes.json();
-          const eventsArray = Array.isArray(trackingData) ? trackingData : (trackingData.timeline || []);
-          setTimeline(eventsArray);
+      const items = ord?.orderItems?.map((i) => ({
+        product: i.product,
+        name: i.name,
+        qty: i.quantity,
+        selected: false
+      })) || [];
 
-          const lastEvent = eventsArray.length ? eventsArray[eventsArray.length - 1] : null;
-          if (lastEvent?.status?.toLowerCase() === 'delivered') {
-            const reviewSubmitted = localStorage.getItem(`review_submitted_${id}`);
-            if (!reviewSubmitted) setShowReviewModal(true);
-          }
-        } else {
-          console.error('Failed to fetch tracking:', trackingRes.status, trackingRes.statusText);
-          setTimeline([]);
+      setReplaceItems(items);
+
+      // Auto open review modal if delivered
+      const last = tJson[tJson.length - 1];
+      if (last?.status?.toLowerCase() === "delivered") {
+        if (!localStorage.getItem(`review_${id}`)) {
+          setShowReview(true);
         }
-
-        // Order
-        if (orderRes.ok) {
-          const orderData = await orderRes.json();
-          const processedOrder = orderData.order || orderData.data?.order || orderData.data || orderData;
-          setOrder(processedOrder);
-
-          // prepare replace items selection state if present
-          const items = (processedOrder?.orderItems || []).map(it => ({
-            product: it.product,
-            name: it.name,
-            qty: it.quantity,
-            selected: false
-          }));
-          setReplaceItems(items);
-        } else {
-          console.error('Failed to fetch order:', orderRes.status, orderRes.statusText);
-          setOrder(null);
-          setReplaceItems([]);
-        }
-      } catch (e) {
-        console.error('Error fetching data:', e);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchData();
+    } catch (err) {
+      console.error("Load error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  // Upload multiple files to /api/upload/cloudinary and return uploaded URLs
-  const uploadFilesToCloudinary = async (files) => {
-    // This function is reused for both review images and replace images
-    try {
-      // Choose which uploading flags to set dynamically when called by callers
-      // (Callers will set their own local uploading flags around this call)
-      const token = localStorage.getItem('token') || localStorage.getItem('adminToken') || null;
+  useEffect(() => {
+    if (id) loadData();
+  }, [id, loadData]);
 
-      const uploadPromises = files.map((file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        return fetch('/api/upload/cloudinary', {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          body: formData,
-        })
-          .then(async (res) => {
-            const data = await res.json();
-            if (!res.ok) {
-              const msg = data?.error || data?.message || 'Upload failed';
-              throw new Error(msg);
-            }
-            return data?.secure_url || data?.url || (data.result && data.result.secure_url) || data?.raw?.secure_url;
-          });
-      });
-
-      const urls = await Promise.all(uploadPromises);
-      return urls;
-    } catch (err) {
-      console.error('Image upload error:', err);
-      throw err;
-    }
-  };
-
-  // REVIEW image change handler (unchanged behavior)
-  const handleImageChange = async (e) => {
+  // Review Image Upload
+  const handleReviewImages = async (e) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const invalid = files.find((f) => !f.type.startsWith('image/'));
-    if (invalid) {
-      setUploadError('One or more files are not images. Please select images only.');
-      return;
-    }
-    const tooLarge = files.find((f) => f.size > 5 * 1024 * 1024);
-    if (tooLarge) {
-      setUploadError('One or more images exceed 5MB. Please choose smaller files.');
+    if (files.some((f) => f.size > 5 * 1024 * 1024)) {
+      setReviewError("Max 5MB image allowed.");
       return;
     }
 
-    setUploadError('');
-    setUploadingImages(true);
+    setUploadingReview(true);
     try {
-      const urls = await uploadFilesToCloudinary(files);
-      setReviewData((prev) => ({ ...prev, images: (prev.images || []).concat(urls) }));
-      setUploadError('');
+      const urls = await uploadToCloudinary(files);
+      setReviewData((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
     } catch (err) {
-      setUploadError(err.message || 'Failed to upload images');
-    } finally {
-      setUploadingImages(false);
+      setReviewError("Failed to upload");
     }
+    setUploadingReview(false);
   };
 
-  // REPLACE image change handler (new)
-  const handleReplaceImageChange = async (e) => {
+  // Replace Image Upload
+  const handleReplaceImages = async (e) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const invalid = files.find((f) => !f.type.startsWith('image/'));
-    if (invalid) {
-      setReplaceUploadError('One or more files are not images. Please select images only.');
-      return;
-    }
-    const tooLarge = files.find((f) => f.size > 5 * 1024 * 1024);
-    if (tooLarge) {
-      setReplaceUploadError('One or more images exceed 5MB. Please choose smaller files.');
+    if (files.some((f) => f.size > 5 * 1024 * 1024)) {
+      setReplaceError("Max 5MB image allowed.");
       return;
     }
 
-    setReplaceUploadError('');
-    setReplaceUploadingImages(true);
+    setUploadingReplace(true);
     try {
-      const urls = await uploadFilesToCloudinary(files);
-      setReplaceImages(prev => (prev || []).concat(urls));
-      setReplaceUploadError('');
+      const urls = await uploadToCloudinary(files);
+      setReplaceImages((prev) => [...prev, ...urls]);
     } catch (err) {
-      console.error('Replace image upload error:', err);
-      setReplaceUploadError(err.message || 'Failed to upload replace images');
-    } finally {
-      setReplaceUploadingImages(false);
+      setReplaceError("Failed to upload");
     }
+    setUploadingReplace(false);
   };
 
-  const handleSubmitReview = async () => {
-    if (uploadingImages) {
-      alert('Please wait for image uploads to finish before submitting your review.');
-      return;
-    }
-
-    if (!reviewData.comment?.trim()) {
-      if (!confirm('Submit review without a comment?')) return;
-    }
+  // Submit Review
+  const submitReview = async () => {
+    if (uploadingReview) return alert("Wait for images to finish uploading");
 
     try {
-      const rawToken = localStorage.getItem('token') || localStorage.getItem('adminToken');
-      let userId = null;
-      if (rawToken) {
-        const decoded = jwt.decode(rawToken);
-        userId = decoded?.user || decoded?.id || decoded?.sub || null;
-      }
-
-      const productId = order?.orderItems?.[0]?.product;
-      if (!productId) {
-        throw new Error('Could not find product information for this order. Please contact support.');
-      }
+      const token = localStorage.getItem("token");
+      const decoded = token ? jwt.decode(token) : null;
 
       const body = {
-        productId,
-        userId,
-        rating: Number(reviewData.rating),
+        productId: order?.orderItems?.[0]?.product,
+        userId: decoded?.id,
+        rating: reviewData.rating,
         comment: reviewData.comment,
-        images: reviewData.images,
+        images: reviewData.images
       };
 
-      const res = await fetch('/api/review/addreview', {
-        method: 'POST',
+      const res = await fetch("/api/review/addreview", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          ...(rawToken && { 'Authorization': `Bearer ${rawToken}` })
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(body)
       });
 
-      const data = await res.json();
-      if (data.success) {
-        localStorage.setItem(`review_submitted_${id}`, 'true');
-        alert('Review added successfully!');
-        setShowReviewModal(false);
-        setReviewData({ rating: 5, comment: '', images: [] });
-      } else {
-        throw new Error(data?.message || 'Failed to add review');
-      }
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d?.message || "Failed");
+
+      localStorage.setItem(`review_${id}`, "true");
+      alert("Review Added!");
+      setShowReview(false);
+
     } catch (err) {
-      console.error('Review submission error:', err);
-      alert(err.message || 'Error submitting review');
+      alert(err.message);
     }
   };
 
-  const handleCancelReview = () => {
-    localStorage.setItem(`review_submitted_${id}`, 'declined');
-    setShowReviewModal(false);
-  };
+  // Submit Replace
+  const submitReplacement = async () => {
+    if (uploadingReplace) return alert("Wait for images to upload");
 
-  const handleCancelOrder = async () => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) {
-      return;
+    const selected = replaceItems
+      .filter((i) => i.selected)
+      .map((i) => ({ productId: i.product, qty: i.qty }));
+
+    if (selected.length === 0) return alert("Select at least one item");
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/orders/replace", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId: id,
+          items: selected,
+          reason: replaceReason,
+          replaceRequestImages: replaceImages
+        })
+      });
+
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.message || "Failed");
+
+      alert("Replace request sent");
+      setShowReplace(false);
+      await loadData();
+
+    } catch (err) {
+      alert(err.message);
     }
-
+  };
+  // Cancel Order
+  const cancelOrder = async () => {
+    if (!confirm("Are you sure you want to cancel this order?")) return;
     setCancelling(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Please log in to cancel the order');
-      }
-
-      const res = await fetch(`/api/orders/cancel`, {
-        method: 'POST',
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/orders/cancel", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ orderId: id }),
+        body: JSON.stringify({ orderId: id })
       });
 
-      if (res.ok) {
-        // Refresh the order status using GET on cancel endpoint
-        const orderRes = await fetch(`/api/orders/cancel?orderId=${encodeURIComponent(id)}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.message || "Failed to cancel");
 
-        if (orderRes.ok) {
-          const data = await orderRes.json();
-          const refreshedOrder = data.order || data;
-          setOrder(refreshedOrder);
-        }
-
-        // Refresh timeline as well
-        const trackingRes = await fetch(`/api/orders/${id}/track`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (trackingRes.ok) {
-          setTimeline(await trackingRes.json());
-        }
-
-        alert('Order has been cancelled successfully');
-      } else {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to cancel order');
-      }
+      alert(d?.message || "Order cancelled");
+      await loadData();
     } catch (err) {
-      console.error('Error cancelling order:', err);
-      alert(err.message || 'Error cancelling order');
+      alert(err.message || "Error cancelling order");
     } finally {
       setCancelling(false);
     }
   };
 
-  // Replace request flow
-  const openReplaceModal = () => {
-    // reset selection: deselect all then preselect first item by default
-    const items = (order?.orderItems || []).map(it => ({
-      product: it.product,
-      name: it.name,
-      qty: it.quantity,
-      selected: false
-    }));
-    setReplaceItems(items);
-    setReplaceReason('');
-    setReplaceImages([]); // reset any previous replace images
-    setReplaceUploadError('');
-    setShowReplaceModal(true);
+  // Replace item toggles and qty setter
+  const toggleReplaceSelection = (index) => {
+    setReplaceItems((prev) => prev.map((it, i) => i === index ? { ...it, selected: !it.selected } : it));
   };
 
-  const toggleItemSelection = (index) => {
-    setReplaceItems(prev => prev.map((it, i) => i === index ? { ...it, selected: !it.selected } : it));
+  const updateReplaceQty = (index, qty) => {
+    const safe = Math.max(1, Number(qty || 1));
+    setReplaceItems((prev) => prev.map((it, i) => i === index ? { ...it, qty: safe } : it));
   };
 
-  const setItemQty = (index, newQty) => {
-    setReplaceItems(prev => prev.map((it, i) => i === index ? { ...it, qty: newQty } : it));
-  };
-
-  const submitReplaceRequest = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Please log in to request a replacement');
-
-      if (replaceUploadingImages) {
-        alert('Please wait for replace image uploads to finish before submitting.');
-        return;
-      }
-
-      const itemsToReplace = replaceItems.filter(i => i.selected).map(i => ({ productId: i.product, qty: Number(i.qty) || 1 }));
-      if (itemsToReplace.length === 0) {
-        alert('Please select at least one item to replace.');
-        return;
-      }
-
-      // Build body and include replace images URLs if any
-      const body = {
-        orderId: id,
-        items: itemsToReplace,
-        reason: replaceReason,
-        replaceRequestImages: replaceImages // may be empty array
-      };
-
-      const res = await fetch('/api/orders/replace', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(body)
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || data?.message || 'Failed to submit replace request');
-      }
-
-      alert(data.message || 'Replace request submitted');
-      setShowReplaceModal(false);
-      setReplaceReason('');
-      setReplaceImages([]);
-
-      // Refresh order and timeline
-      const [orderRes, trackRes] = await Promise.all([
-        fetch(`/api/orders/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`/api/orders/${id}/track`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-
-      if (orderRes.ok) {
-        const od = await orderRes.json();
-        const processedOrder = od.order || od.data?.order || od.data || od;
-        setOrder(processedOrder);
-      }
-
-      if (trackRes.ok) {
-        const tr = await trackRes.json();
-        setTimeline(Array.isArray(tr) ? tr : (tr.timeline || []));
-      }
-    } catch (err) {
-      console.error('Replace request error:', err);
-      alert(err.message || 'Error submitting replace request');
-    }
-  };
-
-  // FIXED: Cancellation logic
-  const cancellableStatuses = ['pending', 'processing', 'paid'];
-  const nonCancellableStatuses = ['shipped', 'delivered', 'cancelled'];
-  const status = (order?.status || '').toLowerCase().trim();
-
-  // Check if timeline has shipped or delivered status
+  // Derived status helpers
+  const status = (order?.status || "").toLowerCase().trim();
+  const cancellableStatuses = ["pending", "processing", "paid"];
+  const nonCancellableStatuses = ["shipped", "delivered", "cancelled"];
   const isShipped = timeline.some(e => {
-    const evtStatus = (e.status || '').toLowerCase().trim();
-    return evtStatus === 'shipped' || evtStatus === 'delivered';
+    const s = (e.status || "").toLowerCase().trim();
+    return s === "shipped" || s === "delivered";
   });
+  const lastEvent = timeline.length ? timeline[timeline.length - 1] : null;
+  const isDelivered = (lastEvent?.status || "").toLowerCase().trim() === "delivered";
 
-  // Check if the last event in timeline is delivered
-  const lastEvent = timeline.length > 0 ? timeline[timeline.length - 1] : null;
-  const isDelivered = lastEvent?.status?.toLowerCase().trim() === 'delivered';
+  const canCancel = !!order && cancellableStatuses.includes(status) && !nonCancellableStatuses.includes(status) && !isShipped && !isDelivered;
+  const canRequestReplace = !!order && isDelivered && status !== "cancelled";
 
-  // Order can be cancelled if:
-  // 1. Order exists
-  // 2. Status is in cancellable list
-  // 3. Status is NOT in non-cancellable list
-  // 4. Timeline doesn't show it's been shipped or delivered
-  // 5. Not delivered
-  const canCancelOrder =
-    !!order &&
-    cancellableStatuses.includes(status) &&
-    !nonCancellableStatuses.includes(status) &&
-    !isShipped &&
-    !isDelivered;
-
-  // Show "Request Replacement" button only when delivered
-  const canRequestReplace = !!order && isDelivered && status !== 'cancelled';
-
+  // JSX Render
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="mb-4">
-        <Link href="/" className="text-indigo-600">Home</Link>
-      </div>
-      <h1 className="text-2xl font-bold mb-4">Order Tracking</h1>
+    <div
+      className="min-h-screen p-4 sm:p-6 md:p-8"
+      style={{ background: "radial-gradient(circle at top, #FFF2Ef 0%, #EAD8D3 45%, #E0CAC5 100%)" }}
+    >
+      <div className="max-w-3xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-md">
+        <div className="mb-4">
+          <Link href="/" className="text-indigo-600 hover:underline">Home</Link>
+        </div>
 
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <>
-          <div className="flex justify-between items-center mb-4">
-            <p>Timeline for order <strong>#{id}</strong></p>
+        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+          <h1 className="text-2xl font-semibold text-gray-800">Order Tracking</h1>
+          <div className="text-sm text-gray-700">Order <strong>#{id}</strong></div>
+        </header>
 
-            {/* Show cancelled message if order.status === 'Cancelled' */}
-            {status === 'cancelled' && (
-              <div className="px-4 py-2 bg-gray-100 text-red-600 rounded">
-                This order has been <strong>Cancelled</strong>.
+        {loading ? (
+          <div className="py-8 text-center text-gray-600">Loading...</div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                {canCancel && (
+                  <button
+                    onClick={cancelOrder}
+                    disabled={cancelling}
+                    className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded-md disabled:opacity-60"
+                  >
+                    {cancelling ? "Cancelling..." : "Cancel Order"}
+                  </button>
+                )}
+
+                {canRequestReplace && (
+                  <button
+                    onClick={() => setShowReplace(true)}
+                    className="px-4 py-2 bg-yellow-300 rounded-md"
+                  >
+                    Request Replacement
+                  </button>
+                )}
               </div>
-            )}
 
-            <div className="flex items-center gap-3">
-              {/* Cancel button - only show if order can be cancelled */}
-              {canCancelOrder && (
-                <button
-                  onClick={handleCancelOrder}
-                  disabled={cancelling}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400"
-                >
-                  {cancelling ? 'Cancelling...' : 'Cancel Order'}
-                </button>
-              )}
-
-              {/* Request Replacement - show only when delivered */}
-              {canRequestReplace && (
-                <button
-                  onClick={openReplaceModal}
-                  className="px-4 py-2 bg-yellow-500 text-black rounded hover:brightness-95"
-                >
-                  Request Replacement
-                </button>
-              )}
-
-              {/* If cannot cancel because it's shipped or delivered */}
-              {!canCancelOrder && order && (status === 'shipped' || status === 'delivered' || isShipped) && status !== 'cancelled' && (
-                <div className="text-sm text-gray-500">
-                  Order cannot be cancelled as it has already been {status === 'delivered' ? 'delivered' : 'shipped'}
-                </div>
+              {!canCancel && order && (status === "shipped" || status === "delivered" || isShipped) && status !== "cancelled" && (
+                <div className="text-sm text-gray-500">Cannot cancel — already {status === "delivered" ? "delivered" : "shipped"}.</div>
               )}
             </div>
-          </div>
 
-          {timeline.length === 0 ? (
-            <p>No tracking events yet.</p>
-          ) : (
-            <ul className="space-y-4">
-              {timeline.map((evt, i) => (
-                <li key={evt._id ?? evt.createdAt ?? i} className="border rounded p-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <div className="font-medium">
-                        {(evt.status || '').charAt(0).toUpperCase() + (evt.status || '').slice(1)}
-                      </div>
-                      {evt.note && <div className="text-gray-600">{evt.note}</div>}
-                      {evt.carrier && (
-                        <div className="text-sm text-gray-600">
-                          Carrier: {evt.carrier} — {evt.trackingNumber}
-                        </div>
-                      )}
-                      {evt.trackingUrl && (
-                        <div className="text-sm">
-                          <Link target="_blank" rel="noreferrer" href={evt.trackingUrl} className="text-indigo-600">
-                            Track shipment
-                          </Link>
-                        </div>
-                      )}
+            {timeline.length === 0 ? (
+              <p className="text-gray-600">No tracking events yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {timeline.map((evt, idx) => <TimelineItem key={evt._id ?? evt.createdAt ?? idx} evt={evt} />)}
+              </ul>
+            )}
+          </>
+        )}
 
-                      {/* Show replace/request images if present on the event */}
-                      {Array.isArray(evt.replaceRequestImages) && evt.replaceRequestImages.length > 0 && (
-                        <div className="mt-2 flex gap-2 flex-wrap">
-                          {evt.replaceRequestImages.map((img, idx) => (
-                            <a key={idx} href={img} target="_blank" rel="noreferrer">
-                              <img src={img} alt={`evt-img-${idx}`} className="w-20 h-20 object-cover rounded border" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {evt.createdAt ? format(new Date(evt.createdAt), 'PPP p') : ''}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-
-      {/* Replace modal */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-            <h2 className="text-lg font-semibold mb-4">Request Replacement</h2>
-
+        {/* Replace Modal */}
+        {showReplace && (
+          <ModalShell title="Request Replacement" onClose={() => setShowReplace(false)}>
             <p className="mb-3 text-sm text-gray-600">Select items to replace, optionally upload images, and provide a reason. Our team will review your request.</p>
 
-            <div className="space-y-3 mb-3 max-h-36 overflow-auto">
+            <div className="space-y-3 mb-3 max-h-40 overflow-auto">
               {replaceItems.length === 0 && <div className="text-sm text-gray-500">No items found for this order.</div>}
               {replaceItems.map((it, i) => (
-                <div key={i} className="flex items-center gap-3 border p-2 rounded">
-                  <input type="checkbox" checked={it.selected} onChange={() => toggleItemSelection(i)} />
+                <div key={i} className="flex items-center gap-3 border p-2 rounded-md">
+                  <input type="checkbox" checked={it.selected} onChange={() => toggleReplaceSelection(i)} />
                   <div className="flex-1">
-                    <div className="font-medium">{it.name}</div>
+                    <div className="font-medium text-gray-800">{it.name}</div>
                     <div className="text-sm text-gray-600">Ordered quantity: {it.qty}</div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -3278,7 +3806,7 @@ export default function OrderTrackingPage() {
                       type="number"
                       min="1"
                       value={it.qty}
-                      onChange={(e) => setItemQty(i, Math.max(1, Number(e.target.value || 1)))}
+                      onChange={(e) => updateReplaceQty(i, e.target.value)}
                       className="w-20 border rounded p-1"
                     />
                   </div>
@@ -3286,7 +3814,7 @@ export default function OrderTrackingPage() {
               ))}
             </div>
 
-            <label className="block mb-2 font-medium">Reason</label>
+            <label className="block mb-2 font-medium text-gray-700">Reason</label>
             <textarea
               value={replaceReason}
               onChange={(e) => setReplaceReason(e.target.value)}
@@ -3296,58 +3824,49 @@ export default function OrderTrackingPage() {
               placeholder="Explain why you want a replacement (e.g. damaged, wrong item, missing part)..."
             />
 
-            <label className="block mb-2 font-medium">Upload Images (optional)</label>
+            <label className="block mb-2 font-medium text-gray-700">Upload Images (optional)</label>
             <input
               type="file"
               multiple
               accept="image/*"
-              onChange={handleReplaceImageChange}
+              onChange={handleReplaceImages}
               className="mb-2"
-              disabled={replaceUploadingImages}
+              disabled={uploadingReplace}
             />
-            {replaceUploadError && (
-              <div className="text-sm text-red-600 mb-2">{replaceUploadError}</div>
-            )}
+            {replaceError && <div className="text-sm text-red-600 mb-2">{replaceError}</div>}
 
             <div className="flex gap-2 mb-4 flex-wrap">
               {replaceImages.map((img, i) => (
-                <div key={i} className="relative">
-                  <img src={img} alt={`replace-preview-${i}`} className="w-16 h-16 object-cover rounded" />
-                </div>
+                <img key={i} src={img} alt={`replace-preview-${i}`} className="w-16 h-16 object-cover rounded" />
               ))}
             </div>
 
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowReplaceModal(false)} className="px-4 py-2 border rounded text-gray-600">Close</button>
+              <button onClick={() => setShowReplace(false)} className="px-4 py-2 border rounded text-gray-600">Close</button>
               <button
-                onClick={submitReplaceRequest}
-                className="px-4 py-2 bg-yellow-500 text-black rounded"
-                disabled={replaceUploadingImages}
+                onClick={submitReplacement}
+                className="px-4 py-2 bg-yellow-300 rounded"
+                disabled={uploadingReplace}
               >
-                {replaceUploadingImages ? 'Uploading images...' : 'Submit Request'}
+                {uploadingReplace ? "Uploading images..." : "Submit Request"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </ModalShell>
+        )}
 
-      {/* Review modal (unchanged) */}
-      {showReviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Add Review</h2>
-            <label className="block mb-2 font-medium">Rating:</label>
+        {/* Review Modal */}
+        {showReview && (
+          <ModalShell title="Add Review" onClose={() => setShowReview(false)}>
+            <label className="block mb-2 font-medium text-gray-700">Rating:</label>
             <select
               value={reviewData.rating}
               onChange={(e) => setReviewData({ ...reviewData, rating: Number(e.target.value) })}
               className="border rounded w-full mb-4 p-2"
             >
-              {[5, 4, 3, 2, 1].map((r) => (
-                <option key={r} value={r}>{r} Star{r > 1 ? 's' : ''}</option>
-              ))}
+              {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Star{r>1?'s':''}</option>)}
             </select>
 
-            <label className="block mb-2 font-medium">Comment:</label>
+            <label className="block mb-2 font-medium text-gray-700">Comment:</label>
             <textarea
               value={reviewData.comment}
               onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
@@ -3357,18 +3876,16 @@ export default function OrderTrackingPage() {
               required
             />
 
-            <label className="block mb-2 font-medium">Upload Images:</label>
+            <label className="block mb-2 font-medium text-gray-700">Upload Images:</label>
             <input
               type="file"
               multiple
               accept="image/*"
-              onChange={handleImageChange}
+              onChange={handleReviewImages}
               className="mb-4"
-              disabled={uploadingImages}
+              disabled={uploadingReview}
             />
-            {uploadError && (
-              <div className="text-sm text-red-600 mb-2">{uploadError}</div>
-            )}
+            {reviewError && <div className="text-sm text-red-600 mb-2">{reviewError}</div>}
 
             <div className="flex gap-2 mb-4 flex-wrap">
               {reviewData.images.map((img, i) => (
@@ -3378,23 +3895,23 @@ export default function OrderTrackingPage() {
 
             <div className="flex justify-end gap-3">
               <button
-                onClick={handleCancelReview}
+                onClick={() => { localStorage.setItem(`review_${id}`, "declined"); setShowReview(false); }}
                 className="px-4 py-2 border rounded text-gray-600"
-                disabled={uploadingImages}
+                disabled={uploadingReview}
               >
                 Cancel
               </button>
               <button
-                onClick={handleSubmitReview}
-                className="px-4 py-2 bg-indigo-600 text-white rounded"
-                disabled={uploadingImages}
+                onClick={submitReview}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded"
+                disabled={uploadingReview}
               >
-                {uploadingImages ? 'Uploading images...' : 'Submit'}
+                {uploadingReview ? "Uploading images..." : "Submit"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </ModalShell>
+        )}
+      </div>
     </div>
   );
 }
