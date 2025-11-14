@@ -715,7 +715,6 @@
 // export default Checkout;
 
 
-
 // pages/checkout.js
 import React, { useEffect, useState } from 'react';
 import { AiOutlinePlusCircle, AiOutlineMinusCircle, AiOutlinePlus, AiOutlineCheck } from "react-icons/ai";
@@ -759,97 +758,102 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
 
   // Check stock availability for items
   const checkStockAvailability = async (items) => {
-    try {
-      const productIdentifiers = Array.from(
-        new Set(
-          Object.values(items).map(item => item._id || item.slug || Object.keys(items)[0])
-        )
-      );
+  try {
+    // Get all unique product IDs or slugs
+    const productIdentifiers = Array.from(
+      new Set(
+        Object.values(items).map(item => item._id || item.slug || Object.keys(items)[0])
+      )
+    );
 
-      if (productIdentifiers.length === 0) {
-        setHasOutOfStockItems(false);
-        setOutOfStockItems([]);
-        return items;
-      }
-
-      const response = await fetch(
-        `/api/inventory/stock?productIds=${JSON.stringify(productIdentifiers)}`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to check stock');
-      }
-
-      const stockData = await response.json();
-      const outOfStock = [];
-      const updatedItems = { ...items };
-
-      Object.entries(updatedItems).forEach(([key, item]) => {
-        const stockInfo = stockData.find(s => 
-          s.productId === item._id || s.slug === item.slug || s._id === item._id
-        );
-
-        if (stockInfo) {
-          updatedItems[key] = {
-            ...item,
-            availableQty: stockInfo.availableQty,
-            inStock: stockInfo.inStock
-          };
-
-          if (stockInfo.availableQty < (item.qty || 1)) {
-            outOfStock.push(item.name);
-          }
-        }
-      });
-
-      setOutOfStockItems(outOfStock);
-      setHasOutOfStockItems(outOfStock.length > 0);
-      return updatedItems;
-    } catch (error) {
-      console.error('Error checking stock:', error);
-      toast.error('Error checking product availability');
+    if (productIdentifiers.length === 0) {
+      setHasOutOfStockItems(false);
+      setOutOfStockItems([]);
       return items;
     }
-  };
+
+    const response = await fetch(
+      `/api/inventory/stock?productIds=${JSON.stringify(productIdentifiers)}`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to check stock');
+    }
+
+    const stockData = await response.json();
+    const outOfStock = [];
+    const updatedItems = { ...items };
+
+    // Update items with stock information
+    Object.entries(updatedItems).forEach(([key, item]) => {
+      const stockInfo = stockData.find(s => 
+        s.productId === item._id || s.slug === item.slug || s._id === item._id
+      );
+
+      if (stockInfo) {
+        updatedItems[key] = {
+          ...item,
+          availableQty: stockInfo.availableQty,
+          inStock: stockInfo.inStock
+        };
+
+        if (stockInfo.availableQty < (item.qty || 1)) {
+          outOfStock.push(item.name);
+        }
+      }
+    });
+
+    setOutOfStockItems(outOfStock);
+    setHasOutOfStockItems(outOfStock.length > 0);
+    return updatedItems;
+  } catch (error) {
+    console.error('Error checking stock:', error);
+    toast.error('Error checking product availability');
+    // In case of error, don't block the UI - assume items are in stock
+    return items;
+  }
+};
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      fetchUserAddresses();
-    }
-    
-    const initializeCheckout = async () => {
-      try {
-        if (router.query.buyNow === 'true') {
-          const buyNowItem = sessionStorage.getItem('buyNowItem');
-          if (buyNowItem) {
-            const item = JSON.parse(buyNowItem);
-            const itemsWithStock = await checkStockAvailability(item);
-            setCheckoutItems(itemsWithStock);
-            setIsBuyNow(true);
-            
-            const subt = Object.values(itemsWithStock).reduce(
-              (sum, item) => sum + (item.price * (item.qty || 1)), 
-              0
-            );
-            setCheckoutSubTotal(subt);
-          }
-        } else {
-          const itemsWithStock = await checkStockAvailability(cart);
+  if (isAuthenticated()) {
+    fetchUserAddresses();
+  }
+  
+  const initializeCheckout = async () => {
+    try {
+      if (router.query.buyNow === 'true') {
+        const buyNowItem = sessionStorage.getItem('buyNowItem');
+        if (buyNowItem) {
+          const item = JSON.parse(buyNowItem);
+          const itemsWithStock = await checkStockAvailability(item);
           setCheckoutItems(itemsWithStock);
-          setCheckoutSubTotal(subTotal);
-          setIsBuyNow(false);
+          setIsBuyNow(true);
+          
+          // Calculate subtotal
+          const subt = Object.values(itemsWithStock).reduce(
+            (sum, item) => sum + (item.price * (item.qty || 1)), 
+            0
+          );
+          setCheckoutSubTotal(subt);
         }
-      } catch (error) {
-        console.error('Error initializing checkout:', error);
-        setCheckoutItems(router.query.buyNow === 'true' ? 
-          JSON.parse(sessionStorage.getItem('buyNowItem') || '{}') : 
-          cart
-        );
+      } else {
+        const itemsWithStock = await checkStockAvailability(cart);
+        setCheckoutItems(itemsWithStock);
+        setCheckoutSubTotal(subTotal);
+        setIsBuyNow(false);
       }
-    };
-    
-    initializeCheckout();
-  }, [router.query, cart, subTotal]);
+    } catch (error) {
+      console.error('Error initializing checkout:', error);
+      // Fallback to original items if there's an error
+      setCheckoutItems(router.query.buyNow === 'true' ? 
+        JSON.parse(sessionStorage.getItem('buyNowItem') || '{}') : 
+        cart
+      );
+    }
+  };
+  
+  initializeCheckout();
+}, [router.query, cart, subTotal]);
 
   const fetchUserAddresses = async () => {
     try {
@@ -923,9 +927,11 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       return;
     }
     
+    // Re-validate stock before proceeding to payment
     const updatedItems = await checkStockAvailability(checkoutItems);
     setCheckoutItems(updatedItems);
     
+    // Check if any items are out of stock
     const hasOutOfStock = Object.values(updatedItems).some(
       item => (item.availableQty !== undefined && item.availableQty <= 0) || 
              (item.qty > (item.availableQty || 0))
@@ -961,6 +967,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
+      // Use checkoutItems and checkoutSubTotal instead of cart and subTotal
       const resp = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pretransaction`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -1031,6 +1038,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
               }))
             }));
 
+            // Clear based on checkout type
             if (isBuyNow) {
               sessionStorage.removeItem('buyNowItem');
               toast.success('Order placed successfully!');
@@ -1058,7 +1066,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
           dbOrderId,
           isBuyNow: isBuyNow
         },
-        theme: { color: '#3399cc' }
+        theme: { color: '#8B6F5E' }
       };
 
       const rzp = new window.Razorpay(options);
@@ -1072,8 +1080,8 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
   };
 
   return (
-    <div className='min-h-screen py-8' style={{
-      background: 'radial-gradient(circle at top, #FFF2EF 0%, #F5E6E3 30%, #E8D5D1 60%, #E0CAC5 100%)',
+    <div className='min-h-screen px-2 py-6 sm:px-4' style={{
+      background: 'radial-gradient(circle, #FFF2EF, #E0CAC5)',
     }}>
       <Head>
         <title>Checkout - Your Store</title>
@@ -1084,330 +1092,383 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
         crossOrigin="anonymous" 
       />
       
-      <div className='container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl'>
-        <h1 className='font-bold text-4xl my-10 text-center text-gray-800 tracking-tight'>
-          Secure Checkout
-        </h1>
+      <div className='max-w-5xl mx-auto'>
+        <h1 className='font-bold text-2xl mb-6 text-center' style={{ color: '#8B6F5E' }}>Checkout</h1>
         
         {/* Buy Now Banner */}
         {isBuyNow && (
-          <div className='bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 mb-8 transform hover:scale-[1.01] transition-transform'>
+          <div className='mb-4 p-3 rounded-lg' style={{ 
+            background: 'rgba(139, 111, 94, 0.1)', 
+            borderLeft: '3px solid #8B6F5E' 
+          }}>
             <div className='flex items-center'>
-              <div className='flex-shrink-0 bg-white rounded-full p-3'>
-                <BsBagCheckFill className='h-6 w-6 text-blue-600' />
-              </div>
-              <div className='ml-4'>
-                <p className='text-base font-semibold text-white'>
-                  Quick Checkout - Buy Now
-                </p>
-                <p className='text-sm text-blue-100 mt-1'>
-                  Your cart items are safe and will not be affected by this purchase
-                </p>
+              <BsBagCheckFill className='h-4 w-4 mr-2' style={{ color: '#8B6F5E' }} />
+              <div>
+                <p className='text-sm font-medium' style={{ color: '#8B6F5E' }}>Quick Checkout</p>
+                <p className='text-xs' style={{ color: '#A08374' }}>Your cart items are safe</p>
               </div>
             </div>
           </div>
         )}
         
-        {/* Delivery Address Section */}
-        <div className='bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 border border-rose-100'>
-          <div className='flex justify-between items-center mb-8'>
-            <div className='flex items-center gap-3'>
-              <div className='w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white font-bold shadow-md'>
-                1
-              </div>
-              <h2 className='text-2xl font-bold text-gray-800'>Select Delivery Address</h2>
-            </div>
-            <button 
-              onClick={() => setShowAddressForm(!showAddressForm)}
-              className='flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-xl hover:from-rose-600 hover:to-rose-700 font-medium shadow-md hover:shadow-lg transition-all transform hover:scale-105'
-            >
-              <AiOutlinePlus className='text-lg' /> Add New Address
-            </button>
-          </div>
-
-          {/* Add New Address Form */}
-          {showAddressForm && (
-            <form onSubmit={handleAddressSubmit} className='mb-8 p-6 border-2 border-rose-200 rounded-2xl bg-gradient-to-br from-white to-rose-50/50'>
-              <h3 className='text-xl font-semibold mb-6 text-gray-800'>Add New Address</h3>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-                <div>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>Full Name</label>
-                  <input
-                    type='text'
-                    name='fullName'
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                    required
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>Phone Number</label>
-                  <input
-                    type='tel'
-                    name='phone'
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                    required
-                  />
-                </div>
-                <div className='md:col-span-2'>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>Street Address</label>
-                  <input
-                    type='text'
-                    name='street'
-                    value={formData.street}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                    required
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>City</label>
-                  <input
-                    type='text'
-                    name='city'
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                    required
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>State</label>
-                  <input
-                    type='text'
-                    name='state'
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                    required
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>Postal Code</label>
-                  <input
-                    type='text'
-                    name='postalCode'
-                    value={formData.postalCode}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                    required
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>Country</label>
-                  <input
-                    type='text'
-                    name='country'
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm bg-gray-50 text-gray-600'
-                    readOnly
-                  />
-                </div>
-                <div className='md:col-span-2'>
-                  <label className='block text-sm font-semibold text-gray-700 mb-2'>Landmark (Optional)</label>
-                  <input
-                    type='text'
-                    name='landmark'
-                    value={formData.landmark}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all'
-                  />
-                </div>
-                <div className='flex items-center'>
-                  <input
-                    type='checkbox'
-                    id='isDefault'
-                    name='isDefault'
-                    checked={formData.isDefault}
-                    onChange={handleInputChange}
-                    className='h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded cursor-pointer'
-                  />
-                  <label htmlFor='isDefault' className='ml-3 block text-sm font-medium text-gray-700 cursor-pointer'>
-                    Set as default address
-                  </label>
-                </div>
-              </div>
-              <div className='mt-6 flex justify-end gap-3'>
-                <button
-                  type='button'
-                  onClick={() => setShowAddressForm(false)}
-                  className='px-6 py-2.5 border-2 border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all'
+        <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+          {/* Main Content */}
+          <div className='lg:col-span-2 space-y-4'>
+            {/* Delivery Address Section */}
+            <div className='rounded-lg p-4' style={{ 
+              background: 'rgba(255, 255, 255, 0.7)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(139, 111, 94, 0.2)'
+            }}>
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className='text-lg font-semibold' >Delivery Address</h2>
+                <button 
+                  onClick={() => setShowAddressForm(!showAddressForm)}
+                  className='flex items-center text-sm font-medium transition-colors'
+                  
                 >
-                  Cancel
-                </button>
-                <button
-                  type='submit'
-                  className='px-6 py-2.5 border-2 border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 shadow-md hover:shadow-lg transition-all transform hover:scale-105'
-                >
-                  Save Address
+                  <AiOutlinePlus className='mr-1 ' size={16}  /> Add New
                 </button>
               </div>
-            </form>
-          )}
 
-          {/* Address List */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-            {addresses.length > 0 ? (
-              addresses.map((address) => (
-                <div 
-                  key={address._id}
-                  onClick={() => setSelectedAddress(address._id)}
-                  className={`p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
-                    selectedAddress === address._id 
-                      ? 'border-rose-500 ring-4 ring-rose-100 bg-gradient-to-br from-rose-50 to-white shadow-lg' 
-                      : 'border-gray-200 hover:border-rose-300 bg-white hover:shadow-md'
-                  }`}
-                >
-                  <div className='flex justify-between items-start'>
-                    <div className='flex-1'>
-                      <h4 className='font-semibold text-gray-900 text-lg'>{address.fullName}</h4>
-                      <p className='text-sm text-gray-600 mt-2'>{address.street}</p>
-                      <p className='text-sm text-gray-600'>{address.city}, {address.state} {address.postalCode}</p>
-                      <p className='text-sm text-gray-600'>{address.country}</p>
-                      <p className='text-sm text-gray-700 mt-2 font-medium'>📞 {address.phone}</p>
-                      {address.landmark && (
-                        <p className='text-sm text-gray-500 mt-1'>📍 {address.landmark}</p>
-                      )}
+              {/* Add New Address Form */}
+              {showAddressForm && (
+                <form onSubmit={handleAddressSubmit} className='mb-4 p-3 rounded-lg' style={{ 
+                  background: 'rgba(224, 202, 197, 0.3)',
+                  border: '1px solid rgba(139, 111, 94, 0.2)'
+                }}>
+                  <h3 className='text-base font-medium mb-3' style={{ color: '#8B6F5E' }}>Add New Address</h3>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                    <div>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>Full Name</label>
+                      <input
+                        type='text'
+                        name='fullName'
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                        required
+                      />
                     </div>
-                    <div className='flex flex-col items-end gap-2'>
-                      {selectedAddress === address._id && (
-                        <div className='h-7 w-7 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center text-white shadow-md'>
-                          <AiOutlineCheck size={16} />
-                        </div>
-                      )}
-                      {address.isDefault && (
-                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300'>
-                          Default
-                        </span>
-                      )}
+                    <div>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>Phone Number</label>
+                      <input
+                        type='tel'
+                        name='phone'
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                        required
+                      />
+                    </div>
+                    <div className='md:col-span-2'>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>Street Address</label>
+                      <input
+                        type='text'
+                        name='street'
+                        value={formData.street}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>City</label>
+                      <input
+                        type='text'
+                        name='city'
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>State</label>
+                      <input
+                        type='text'
+                        name='state'
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>Postal Code</label>
+                      <input
+                        type='text'
+                        name='postalCode'
+                        value={formData.postalCode}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>Country</label>
+                      <input
+                        type='text'
+                        name='country'
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(224, 202, 197, 0.3)'
+                        }}
+                        readOnly
+                      />
+                    </div>
+                    <div className='md:col-span-2'>
+                      <label className='block text-xs font-medium mb-1' style={{ color: '#8B6F5E' }}>Landmark (Optional)</label>
+                      <input
+                        type='text'
+                        name='landmark'
+                        value={formData.landmark}
+                        onChange={handleInputChange}
+                        className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
+                        style={{ 
+                          borderColor: 'rgba(139, 111, 94, 0.3)',
+                          background: 'rgba(255, 255, 255, 0.9)'
+                        }}
+                      />
+                    </div>
+                    <div className='flex items-center'>
+                      <input
+                        type='checkbox'
+                        id='isDefault'
+                        name='isDefault'
+                        checked={formData.isDefault}
+                        onChange={handleInputChange}
+                        className='h-3 w-3 rounded'
+                        style={{ accentColor: '#8B6F5E' }}
+                      />
+                      <label htmlFor='isDefault' className='ml-2 text-xs' style={{ color: '#8B6F5E' }}>
+                        Set as default
+                      </label>
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className='md:col-span-2 text-center py-12 bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-dashed border-gray-300'>
-                <p className='text-gray-500 text-lg'>No saved addresses found. Please add an address to continue.</p>
-              </div>
-            )}
-          </div>
-        </div>
+                  <div className='mt-3 flex justify-end space-x-2'>
+                    <button
+                      type='button'
+                      onClick={() => setShowAddressForm(false)}
+                      className='px-3 py-1.5 rounded text-xs font-medium transition-colors'
+                      style={{ 
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        color: '#8B6F5E',
+                        border: '1px solid rgba(139, 111, 94, 0.3)'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type='submit'
+                      className='px-3 py-1.5 rounded text-xs font-medium text-white transition-colors'
+                      style={{ background: '#8B6F5E' }}
+                    >
+                      Save Address
+                    </button>
+                  </div>
+                </form>
+              )}
 
-        {/* Order Summary */}
-        <div className='bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 border border-rose-100'>
-          <div className='flex items-center gap-3 mb-6'>
-            <div className='w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white font-bold shadow-md'>
-              2
-            </div>
-            <h2 className='text-2xl font-bold text-gray-800'>Order Summary</h2>
-          </div>
-          
-          {/* Cart Items */}
-          <div className='space-y-4 mb-8'>
-            {Object.keys(checkoutItems).length === 0 ? (
-              <div className='text-center py-16 bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-dashed border-gray-300'>
-                <p className='text-gray-500 text-lg'>Your cart is empty</p>
-              </div>
-            ) : (
-              Object.entries(checkoutItems).map(([key, item]) => {
-                const isOutOfStock = item.availableQty !== undefined && item.availableQty <= 0;
-                return (
-                  <div key={key} className={`flex justify-between items-center bg-gradient-to-r from-white to-rose-50/30 rounded-2xl p-5 border-2 border-gray-100 hover:shadow-md transition-all ${isOutOfStock ? 'opacity-60' : ''}`}>
-                    <div className='flex items-center flex-1 gap-4'>
-                      <div className='h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 shadow-sm'>
-                        <img
-                          src={item.img || '/placeholder-product.png'}
-                          alt={item.name}
-                          className='h-full w-full object-cover object-center'
-                        />
-                      </div>
-                      <div className='flex-1'>
-                        <h3 className='text-base font-semibold text-gray-900'>{item.name}</h3>
-                        <p className='mt-1 text-sm text-gray-600'>{item.variant} | {item.size}</p>
-                        <p className='mt-2 text-base font-bold text-rose-600'>₹{item.price} × {item.qty}</p>
-                        {isOutOfStock && (
-                          <p className='mt-2 text-sm font-bold text-red-600 bg-red-50 inline-block px-3 py-1 rounded-full'>
-                            Out of Stock
+              {/* Address List */}
+              <div className='grid grid-cols-1 gap-3'>
+                {addresses.length > 0 ? (
+                  addresses.map((address) => (
+                    <div 
+                      key={address._id}
+                      onClick={() => setSelectedAddress(address._id)}
+                      className='p-3 rounded cursor-pointer transition-all duration-200'
+                      style={{ 
+                        background: selectedAddress === address._id 
+                          ? '#FFF2EF' 
+                          : 'rgba(255, 255, 255, 0.5)',
+                        border: selectedAddress === address._id 
+                          ? '2px solid #505460' 
+                          : '1px solid rgba(139, 111, 94, 0.2)'
+                      }}
+                    >
+                      <div className='flex justify-between items-start'>
+                        <div className='flex-1'>
+                          <h4 className='font-medium text-sm' >{address.fullName}</h4>
+                          <p className='text-xs mt-1' >
+                            {address.street}, {address.city}, {address.state} {address.postalCode}
                           </p>
+                          <p className='text-xs' >Phone: {address.phone}</p>
+                          {address.landmark && (
+                            <p className='text-xs' >Landmark: {address.landmark}</p>
+                          )}
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          {selectedAddress === address._id && (
+                            <div className='h-4 w-4 rounded-full flex items-center justify-center text-white' style={{ background: '#0BAF16' }}>
+                              <AiOutlineCheck size={10} />
+                            </div>
+                          )}
+                          {address.isDefault && (
+                            <span className='px-2 py-0.5 rounded-full text-xs font-medium' style={{ 
+                              background: 'rgba(139, 111, 94, 0.2)',
+                              color: '#8B6F5E'
+                            }}>
+                              Default
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className='text-center py-6'>
+                    <p className='text-sm' style={{ color: '#A08374' }}>No saved addresses. Please add one to continue.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Order Items */}
+            <div className='rounded-lg p-4' style={{ 
+              background: 'rgba(255, 255, 255, 0.7)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(139, 111, 94, 0.2)'
+            }}>
+              <h2 className='text-lg font-semibold mb-3' >Order Items</h2>
+              
+              <div className='space-y-3'>
+                {Object.keys(checkoutItems).length === 0 ? (
+                  <div className='text-center py-6'>
+                    <p className='text-sm' style={{ color: '#A08374' }}>Your cart is empty</p>
+                  </div>
+                ) : (
+                  Object.entries(checkoutItems).map(([key, item]) => {
+                    const isOutOfStock = item.availableQty !== undefined && item.availableQty <= 0;
+                    return (
+                      <div key={key} className={`flex items-center gap-3 pb-3 border-b ${isOutOfStock ? 'opacity-60' : ''}`} style={{ borderColor: 'rgba(139, 111, 94, 0.1)' }}>
+                        <div className='h-14 w-14 flex-shrink-0 overflow-hidden rounded' style={{ border: '1px solid rgba(139, 111, 94, 0.2)' }}>
+                          <img
+                            src={item.img || '/placeholder-product.png'}
+                            alt={item.name}
+                            className='h-full w-full object-cover'
+                          />
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                          <h3 className='text-sm font-medium truncate' style={{ color: '#8B6F5E' }}>{item.name}</h3>
+                          <p className='text-xs' style={{ color: '#A08374' }}>{item.variant} | {item.size}</p>
+                          <p className='text-xs font-medium mt-1' style={{ color: '#8B6F5E' }}>₹{item.price} x {item.qty}</p>
+                          {isOutOfStock && (
+                            <p className='text-xs font-semibold text-red-600 mt-1'>Out of Stock</p>
+                          )}
+                        </div>
+                        {!isBuyNow && !isOutOfStock && (
+                          <div className='flex items-center gap-1'>
+                            <button
+                              onClick={() => removeFromCart(key, 1, item.price, item.name, item.size, item.variant)}
+                              className='transition-colors'
+                              style={{ color: '#A08374' }}
+                            >
+                              <AiOutlineMinusCircle size={18} />
+                            </button>
+                            <span className='w-6 text-center text-xs font-medium' style={{ color: '#8B6F5E' }}>{item.qty}</span>
+                            <button
+                              onClick={() => addToCart(key, 1, item.price, item.name, item.size, item.variant)}
+                              className='transition-colors'
+                              style={{ color: '#A08374' }}
+                            >
+                              <AiOutlinePlusCircle size={18} />
+                            </button>
+                          </div>
+                        )}
+                        {isBuyNow && (
+                          <div className='text-xs font-medium' style={{ color: '#8B6F5E' }}>
+                            Qty: {item.qty}
+                          </div>
                         )}
                       </div>
-                    </div>
-                    {!isBuyNow && !isOutOfStock && (
-                      <div className='flex items-center gap-3 bg-white rounded-xl px-4 py-2 border-2 border-gray-200'>
-                        <button
-                          onClick={() => removeFromCart(key, 1, item.price, item.name, item.size, item.variant)}
-                          className='text-gray-400 hover:text-rose-600 transition-colors'
-                        >
-                          <AiOutlineMinusCircle size={24} />
-                        </button>
-                        <span className='w-8 text-center font-semibold text-gray-800'>{item.qty}</span>
-                        <button
-                          onClick={() => addToCart(key, 1, item.price, item.name, item.size, item.variant)}
-                          className='text-gray-400 hover:text-rose-600 transition-colors'
-                        >
-                          <AiOutlinePlusCircle size={24} />
-                        </button>
-                      </div>
-                    )}
-                    {isBuyNow && (
-                      <div className='text-sm font-semibold text-gray-900 bg-gray-100 px-4 py-2 rounded-xl'>
-                        Qty: {item.qty}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Order Total */}
-          <div className='bg-gradient-to-br from-rose-50 to-white rounded-2xl p-6 border-2 border-rose-100'>
-            <div className='flex justify-between text-base font-medium text-gray-700 mb-3'>
-              <p>Subtotal</p>
-              <p className='font-semibold'>₹{checkoutSubTotal}</p>
-            </div>
-            <div className='flex justify-between text-base font-medium text-gray-700 mb-4'>
-              <p>Shipping</p>
-              <p className='font-semibold text-green-600'>FREE</p>
-            </div>
-            <div className='flex justify-between text-xl font-bold text-gray-900 border-t-2 border-rose-200 pt-4'>
-              <p>Total</p>
-              <p className='text-rose-600'>₹{checkoutSubTotal}</p>
-            </div>
-            
-            {/* Check for out of stock items */}
-            {(hasOutOfStockItems || outOfStockItems.length > 0) && (
-              <div className='mt-6 p-5 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 rounded-2xl shadow-md'>
-                <p className='text-red-800 font-bold text-center mb-3 text-lg'>
-                  ⚠️ Some items are out of stock or have insufficient quantity
-                </p>
-                <ul className='text-sm text-red-700 space-y-2'>
-                  {outOfStockItems.map((itemName, index) => (
-                    <li key={index} className='flex items-center gap-2'>
-                      <span className='w-2 h-2 bg-red-500 rounded-full'></span>
-                      {itemName} - Out of stock
-                    </li>
-                  ))}
-                  {Object.values(checkoutItems).map((item) => {
-                    if (item.availableQty > 0 && item.qty > item.availableQty) {
-                      return (
-                        <li key={item._id || item.name} className='flex items-center gap-2'>
-                          <span className='w-2 h-2 bg-red-500 rounded-full'></span>
-                          {item.name} - Only {item.availableQty} available
-                        </li>
-                      );
-                    }
-                    return null;
-                  })}
-                </ul>
+          {/* Order Summary Sidebar */}
+          <div className='lg:col-span-1'>
+            <div className='rounded-lg p-4 sticky top-4' style={{ 
+              background: 'rgba(255, 255, 255, 0.7)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(139, 111, 94, 0.2)'
+            }}>
+              <h2 className='text-lg font-semibold mb-4' >Order Summary</h2>
+              
+              <div className='space-y-2 mb-4 pb-4' style={{ borderBottom: '1px solid rgba(139, 111, 94, 0.1)' }}>
+                <div className='flex justify-between text-sm'>
+                  <span >Subtotal</span>
+                  <span className='font-medium' >₹{checkoutSubTotal}</span>
+                </div>
+                <div className='flex justify-between text-sm'>
+                  <span >Shipping</span>
+                  <span className='font-medium' >FREE</span>
+                </div>
               </div>
-            )}
+              
+              <div className='flex justify-between text-base font-bold mb-4'>
+                <span >Total</span>
+                <span >₹{checkoutSubTotal}</span>
+              </div>
+              
+              {/* Stock Warning */}
+              {(hasOutOfStockItems || outOfStockItems.length > 0) && (
+                <div className='mb-4 p-3 rounded-lg' style={{ 
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)'
+                }}>
+                  <p className='text-red-700 font-semibold text-xs text-center mb-2'>
+                    ⚠️ Stock Issues
+                  </p>
+                  <ul className='text-xs text-red-600 space-y-1'>
+                    {outOfStockItems.map((itemName, index) => (
+                      <li key={index} className='truncate'>• {itemName} - Out of stock</li>
+                    ))}
+                    {Object.values(checkoutItems).map((item) => {
+                      if (item.availableQty > 0 && item.qty > item.availableQty) {
+                        return (
+                          <li key={item._id || item.name} className='truncate'>
+                            • {item.name} - Only {item.availableQty} available
+                          </li>
+                        );
+                      }
+                      return null;
+                    })}
+                  </ul>
+                </div>
+              )}
 
-            {/* Payment Button */}
-            <div className='mt-6'>
+              {/* Payment Button */}
               <button
                 onClick={handleProceedToPayment}
                 disabled={
@@ -1415,26 +1476,28 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                   !selectedAddress || 
                   loading
                 }
-                className={`w-full flex justify-center items-center py-4 px-6 border-2 border-transparent rounded-2xl text-lg font-bold text-white shadow-lg transform transition-all duration-200 ${
+                className={`w-full flex justify-center items-center py-2.5 rounded-lg text-sm font-medium text-white transition-all ${
                   Object.keys(checkoutItems).length === 0 || 
                   !selectedAddress || 
                   loading
-                    ? 'bg-gray-400 cursor-not-allowed opacity-60'
-                    : 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:opacity-90'
                 }`}
+                style={{ background: '#000000' }}
               >
                 {loading ? (
-                  <div className='flex items-center gap-3'>
-                    <div className='w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin'></div>
-                    Processing...
-                  </div>
+                  'Processing...'
                 ) : (
                   <>
-                    <BsBagCheckFill className='mr-3 text-xl' />
+                    <BsBagCheckFill className='mr-2' size={16} />
                     Pay ₹{checkoutSubTotal}
                   </>
                 )}
               </button>
+              
+              <p className='text-xs text-center mt-3' style={{ color: '#A08374' }}>
+                Secure payment powered by Razorpay
+              </p>
             </div>
           </div>
         </div>
