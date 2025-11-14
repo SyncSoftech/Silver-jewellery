@@ -34,11 +34,10 @@
 //   }
 // }
 
-// pages/api/reviews/getreviews.js
 import dbConnect from "@/middleware/mongoose";
 import Review from "@/models/Review";
 import Product from "@/models/Product";
-import User from "@/models/User";
+import mongoose from "mongoose";
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -49,16 +48,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { productId, page = 1, limit = 6 } = req.query;
+    // normalize query params
+    let { productId, page = 1, limit = 6 } = req.query;
+    if (Array.isArray(productId)) productId = productId[0];
 
     if (!productId) {
-      return res.status(400).json({ success: false, message: "Product ID is required" });
+      return res.status(400).json({ success: false, message: "productId is required" });
     }
 
-    const perPage = Math.max(1, parseInt(limit, 10));
-    const pageNum = Math.max(1, parseInt(page, 10));
+    // validate productId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: "Invalid productId" });
+    }
 
-    // Ensure product exists (optional but helpful)
+    const perPage = Math.max(1, parseInt(limit, 10) || 6);
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+
+    // Ensure product exists
     const product = await Product.findById(productId).select("_id");
     if (!product) {
       return res.status(404).json({ success: false, message: "Product not found" });
@@ -92,4 +98,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
-
