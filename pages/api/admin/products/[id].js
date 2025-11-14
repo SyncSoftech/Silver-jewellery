@@ -321,20 +321,44 @@ const handler = async (req, res) => {
       console.error('Error updating product:', error);
       return res.status(500).json({ error: 'Error updating product' });
     }
-  } else if (method === 'DELETE') {
-    try {
-      const product = await Product.findById(id);
-      if (!product) return res.status(404).json({ error: 'Product not found' });
-      await product.remove();
-      return res.status(200).json({ message: 'Product removed' });
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      return res.status(500).json({ error: 'Error deleting product' });
+  } 
+  // inside your handler for DELETE (assume connectDb() already called earlier)
+if (req.method === 'DELETE') {
+  try {
+    const { id } = req.query;
+    if (!id) {
+      return res.status(400).json({ error: 'Missing product id' });
     }
-  } else {
-    res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
-    return res.status(405).end(`Method ${method} Not Allowed`);
+
+    // Optional: verify admin token if you use it
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace('Bearer ', '');
+    // verify token if necessary here...
+
+    // Use model-level delete to avoid deprecated document.remove()
+    const deleted = await Product.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    console.log('deleted product', deleted);
+    return res.status(200).json({ success: true, product: deleted });
+  } catch (err) {
+    console.error('Error deleting product:', err);
+
+    // handle DNS/connection timeout specifically if it happens
+    if (err.code === 'ETIMEOUT' || (err.message && err.message.includes('querySrv'))) {
+      return res.status(503).json({
+        error: 'Database DNS lookup timeout (querySrv). Check MONGODB URI, network/DNS, or try using a direct connection string.',
+        details: err.message
+      });
+    }
+
+    return res.status(500).json({ error: 'Server error deleting product', details: err.message });
   }
+}
+
 };
 
 export default connectDb(handler);
