@@ -3292,6 +3292,7 @@ export default function OrderTrackingPage() {
               onChange={(e) => setReplaceReason(e.target.value)}
               rows="3"
               className="border rounded w-full p-2 mb-4"
+              required
               placeholder="Explain why you want a replacement (e.g. damaged, wrong item, missing part)..."
             />
 
@@ -3353,6 +3354,7 @@ export default function OrderTrackingPage() {
               className="border rounded w-full p-2 mb-4"
               placeholder="Write your review..."
               rows="3"
+              required
             />
 
             <label className="block mb-2 font-medium">Upload Images:</label>

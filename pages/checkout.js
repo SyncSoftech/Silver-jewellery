@@ -1160,6 +1160,8 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                         type='tel'
                         name='phone'
                         value={formData.phone}
+                        minLength={10}
+                        maxLength={10}
                         onChange={handleInputChange}
                         className='w-full px-2 py-1.5 text-sm rounded border focus:outline-none focus:ring-1'
                         style={{ 
