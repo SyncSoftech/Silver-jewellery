@@ -31,10 +31,10 @@ const Footer = () => {
           <div className="lg:w-1/4 md:w-1/2 w-full px-4">
             <h2 className="title-font font-medium text-gray-900 tracking-widest text-sm mb-3">SHOP</h2>
             <nav className="list-none mb-10 space-y-2">
-              <li><Link href="/collections/rings"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Rings</span></Link></li>
-              <li><Link href="/collections/necklaces"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Necklaces</span></Link></li>
-              <li><Link href="/collections/earrings"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Earrings</span></Link></li>
-              <li><Link href="/collections/bracelets"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Bracelets</span></Link></li>
+              <li><Link href="/rings"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Rings</span></Link></li>
+              <li><Link href="/necklaces"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Necklaces</span></Link></li>
+              <li><Link href="/earrings"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Earrings</span></Link></li>
+              <li><Link href="/bracelets"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Bracelets</span></Link></li>
               </nav>
           </div>
           
@@ -43,7 +43,7 @@ const Footer = () => {
             <nav className="list-none mb-10 space-y-2">
               <li><Link href="/contact"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Contact Us</span></Link></li>
               <li><Link href="/faq"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">FAQs</span></Link></li>
-              <li><Link href="/shipping-returns"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Shipping & Replace</span></Link></li>
+              <li><Link href="/shipping-replace"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Shipping & Replace</span></Link></li>
               <li><Link href="/orders"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Track Order</span></Link></li>
             </nav>
           </div>
@@ -52,7 +52,7 @@ const Footer = () => {
             <h2 className="title-font font-medium text-gray-900 tracking-widest text-sm mb-3">POLICIES</h2>
             <nav className="list-none mb-10 space-y-2">
               <li><Link href="/privacy-policy"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Privacy Policy</span></Link></li>
-              <li><Link href="/terms-conditions"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Terms & Conditions</span></Link></li>
+              <li><Link href="/terms-and-conditions"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Terms & Conditions</span></Link></li>
               <li><Link href="/shipping-policy"><span className="text-gray-600 hover:text-gray-800 cursor-pointer">Shipping Policy</span></Link></li>
             </nav>
           </div>

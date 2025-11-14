@@ -720,16 +720,7 @@ export default function GoldEarringsHero() {
                         modern women who love timeless style.
                       </p>
 
-                      <div className="flex flex-wrap gap-3 sm:gap-4">
-                        <button className="group relative bg-white text-slate-800 px-6 sm:px-8 py-2.5 sm:py-3 uppercase tracking-wider text-xs sm:text-sm font-semibold rounded-full transition-transform transform hover:-translate-y-1 shadow-md">
-                          <span className="relative z-10">Shop Now</span>
-                          <div className="absolute inset-0 bg-gradient-to-r from-rose-100 to-purple-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"></div>
-                        </button>
-
-                        <button className="bg-transparent border-2 border-white/80 text-white px-6 sm:px-8 py-2.5 sm:py-3 uppercase tracking-wider text-xs sm:text-sm font-semibold rounded-full backdrop-blur-sm hover:bg-white/10 transition">
-                          View Collection
-                        </button>
-                      </div>
+                     
 
                       {/* Ratings + Trust */}
                       <div className="flex gap-6 pt-3 text-rose-100 text-xs sm:text-sm">
@@ -772,14 +763,7 @@ export default function GoldEarringsHero() {
                     </div>
 
                     {/* Right column optional */}
-                    <div className="hidden lg:flex items-center justify-center">
-                      <div className="bg-white/5 p-6 rounded-2xl border border-white/10 text-white/90 max-w-xs">
-                        <p className="text-sm font-medium">Limited Edition</p>
-                        <h3 className="mt-2 text-lg font-semibold">
-                          Gold Drop Earrings
-                        </h3>
-                      </div>
-                    </div>
+                    
                   </div>
                 </div>
               </div>
