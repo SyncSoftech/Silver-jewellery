@@ -42,7 +42,7 @@ const RecentlyViewed = ({
 
   return (
     <section className="py-16  relative overflow-hidden" style={{
-      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
+      background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)',
     }}>
       {/* Decorative background elements */}
       <div className="absolute inset-0 opacity-30">

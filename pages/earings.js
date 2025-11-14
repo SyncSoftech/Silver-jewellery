@@ -335,7 +335,7 @@ const Earrings = ({
     <div
       className="min-h-screen  relative overflow-hidden"
       style={{
-        background: "radial-gradient(circle, #FFF2Ef,#E0CAC5)",
+        background: "radial-gradient(circle, #FFF2Ef,#DBC4BF)",
       }}
     >
       {/* Decorative Background Elements */}

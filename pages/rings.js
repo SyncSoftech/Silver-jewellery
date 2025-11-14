@@ -302,7 +302,7 @@ const Rings = ({ Products, addToCart, buyNow, wishlist = {}, addToWishlist, remo
 
   return (
     <div className='min-h-screen  relative overflow-hidden' style={{
-      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
+      background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)',
     }}>
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-rose-200 rounded-full filter blur-3xl opacity-20 animate-pulse"></div>

@@ -457,7 +457,7 @@ export default function NewProducts({
 
   return (
     <section className="py-10  relative overflow-hidden" style={{
-      background: 'radial-gradient(circle, #FFF2Ef,#E0CAC5)',
+      background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)',
     }}>
       {/* Minimal Decorative Elements */}
       <div className="absolute top-20 right-10 w-64 h-64 bg-pink-100/30 rounded-full filter blur-3xl"></div>
