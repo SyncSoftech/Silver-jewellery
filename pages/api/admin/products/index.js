@@ -1,8 +1,6 @@
 // pages/api/admin/products/index.js
 import connectDb from '../../../../middleware/mongoose';
-import adminAuth from '../../../../middleware/adminAuth';
 import Product from '../../../../models/Product';
-import { verifyToken } from '../../../../utils/jwt';
 
 const makeSlug = (text = '') =>
   String(text)
@@ -24,21 +22,6 @@ const normalizeProduct = (p) => ({
 });
 
 const handler = async (req, res) => {
-  // Check admin authentication for all methods except GET
-  if (req.method !== 'GET') {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'Authentication required' });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin access required' });
-    }
-  }
-
   if (req.method === 'GET') {
     try {
       const products = await Product.find({});
@@ -200,12 +183,4 @@ const handler = async (req, res) => {
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 };
 
-// Apply admin auth to all non-GET requests
-const withAdminAuth = (req, res) => {
-  if (req.method === 'GET') {
-    return handler(req, res);
-  }
-  return adminAuth(handler)(req, res);
-};
-
-export default connectDb(withAdminAuth);
+export default connectDb(handler);
