@@ -394,7 +394,7 @@ const Signup = () => {
             </div>
           </a>
 
-          <div className="w-full bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl md:mt-0 sm:max-w-md xl:p-0 border border-white/20 transition-all hover:shadow-rose-200/50">
+          <div className="w-full bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl md:mt-0 sm:max-w-md xl:p-0 border border-white/20 transition-all ">
             <div className="p-8 space-y-6">
 
               <div className="text-center space-y-2">
