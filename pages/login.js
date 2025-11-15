@@ -487,7 +487,7 @@ function Login() {
                         <div className="p-8 space-y-6">
                             
                             <div className="text-center space-y-2">
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                                <h1 className="text-3xl font-bold bg-gradient-to-r from-rose-300 to-pink-600 bg-clip-text text-transparent">
                                     Welcome Back
                                 </h1>
                                 <p className="text-sm text-gray-600">
@@ -540,7 +540,7 @@ function Login() {
                                 <button
                                     onClick={handleSubmit}
                                     disabled={loading}
-                                    className={`w-full text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:outline-none focus:ring-rose-300 font-semibold rounded-xl text-sm px-5 py-3.5 text-center shadow-lg shadow-rose-500/30 transition-all transform hover:scale-[1.02] active:scale-[0.98] ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                    className={`w-full text-white bg-gradient-to-r from-rose-300 to-pink-600 hover:from-rose-400 hover:to-pink-600 focus:ring-4 focus:outline-none focus:ring-rose-300 font-semibold rounded-xl text-sm px-5 py-3.5 text-center shadow-lg shadow-rose-500/30 transition-all transform hover:scale-[1.02] active:scale-[0.98] ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                                 >
                                     {loading ? (
                                         <span className="flex items-center justify-center">
