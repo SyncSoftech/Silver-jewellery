@@ -2724,7 +2724,7 @@ const Navbar = ({
       </div>
       
       <div className="nav lg:block">
-        <ul className='flex items-center space-x-8 font-medium md:text-lg tracking-wide'>
+        <ul className='flex items-center font-alegreya-sans-medium space-x-8 font-medium md:text-lg tracking-wide'>
           <Link href={'/bracelets'}><span className='hover:text-slate-700 transition-all duration-300 relative group'><li>Bracelets</li><span className='absolute bottom-0 left-0 w-0 h-0.5 bg-slate-700 group-hover:w-full transition-all duration-300'></span></span></Link>
           <Link href={'/earings'}><span className='hover:text-slate-700 transition-all duration-300 relative group'><li>Earings</li><span className='absolute bottom-0 left-0 w-0 h-0.5 bg-slate-700 group-hover:w-full transition-all duration-300'></span></span></Link>
           <Link href={'/necklaces'}><span className='hover:text-slate-700 transition-all duration-300 relative group'><li>Necklaces</li><span className='absolute bottom-0 left-0 w-0 h-0.5 bg-slate-700 group-hover:w-full transition-all duration-300'></span></span></Link>
