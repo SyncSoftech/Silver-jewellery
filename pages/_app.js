@@ -783,6 +783,8 @@ export default function App({ Component, pageProps }) {
       recentlyViewed={recentlyViewed}
       addToRecentlyViewed={addToRecentlyViewed}
       clearRecentlyViewed={clearRecentlyViewed}
+      user={user}           // ← ADDED
+    Logout={logout}
       {...pageProps}
     />
   )

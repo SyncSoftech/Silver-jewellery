@@ -48,6 +48,18 @@ const OrderSchema = new mongoose.Schema({
     default: 'Online Payment (Razorpay)'
   },
   paymentInfo: { type: PaymentInfoSchema, default: () => ({}) },
+  couponCode: { type: String },
+  discountAmount: { type: Number, default: 0 },
+  finalAmount: { type: Number, required: true },
+  appliedCoupon: {
+    type: {
+      code: String,
+      discountType: String,
+      value: Number,
+      discountApplied: Number
+    },
+    default: null
+  },
   status: {
     type: String,
     enum: ['Pending', 'Processing', 'Paid', 'Shipped', 'Completed', 'Cancelled','Replace Requested','Replace Approved','Replace Rejected', 'Refunded'],
