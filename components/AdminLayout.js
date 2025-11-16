@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { RiCoupon3Fill } from "react-icons/ri";
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
@@ -64,6 +65,7 @@ export default function AdminLayout({ children }) {
         <nav className="mt-8">
           <NavItem href="/admin/dashboard" icon="📊" text="Dashboard" isOpen={isSidebarOpen} />
           <NavItem href="/admin/products" icon="🛍️" text="Products" isOpen={isSidebarOpen} />
+          <NavItem href="/admin/coupons" icon={<RiCoupon3Fill />} text="Coupons" isOpen={isSidebarOpen} />
           <NavItem href="/admin/orders" icon="📦" text="Orders" isOpen={isSidebarOpen} />
           <NavItem href="/admin/customers" icon="👥" text="Customers" isOpen={isSidebarOpen} />
           <button
