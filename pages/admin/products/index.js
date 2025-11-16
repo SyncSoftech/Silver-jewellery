@@ -54,7 +54,6 @@
 //   setFilteredProducts(filtered);
 // }, [searchTerm, products]);
 
-
 //   const handleEdit = (product) => {
 //     setCurrentProduct(product);
 //     setFormData({
@@ -89,12 +88,12 @@
 //     e.preventDefault();
 //     try {
 //       const token = localStorage.getItem('adminToken');
-//       const url = currentProduct 
+//       const url = currentProduct
 //         ? `/api/admin/products/${currentProduct._id}`
 //         : '/api/admin/products';
-      
+
 //       const method = currentProduct ? 'PUT' : 'POST';
-      
+
 //       const response = await fetch(url, {
 //         method,
 //         headers: {
@@ -105,7 +104,7 @@
 //       });
 
 //       const data = await response.json();
-      
+
 //       if (response.ok) {
 //         if (currentProduct) {
 //           setProducts(products.map(p => p._id === currentProduct._id ? data : p));
@@ -364,9 +363,6 @@
 //   );
 // }
 
-
-
-
 // // pages/admin/products/index.js
 // import { useState, useEffect } from 'react';
 // import { useRouter } from 'next/router';
@@ -501,7 +497,6 @@
 //   }
 // };
 
-
 //   const handleEdit = (product) => {
 //     setCurrentProduct(product);
 //     setFormData({
@@ -543,15 +538,15 @@
 //   if (!formData.img.trim()) { alert('Please upload or paste an image URL'); return; }
 //   if (!formData.price || Number(formData.price) <= 0) { alert('Please enter a valid price'); return; }
 //   if (formData.availableQty === '' || parseInt(formData.availableQty, 10) < 0) { alert('Please enter a valid quantity'); return; }
-  
+
 //   try {
 //     const token = localStorage.getItem('adminToken');
-    
+
 //     // Use different endpoints for POST (create) vs PUT (update)
-//     const url = currentProduct 
-//       ? `/api/admin/products/${currentProduct._id}` 
+//     const url = currentProduct
+//       ? `/api/admin/products/${currentProduct._id}`
 //       : '/api/admin/products';
-    
+
 //     const res = await fetch(url, {
 //       method: currentProduct ? 'PUT' : 'POST',
 //       headers: {
@@ -582,16 +577,16 @@
 //       console.error('API Error:', data);
 //       return;
 //     }
-    
+
 //     alert('Product saved successfully!');
-    
+
 //     // Update local state
 //     if (currentProduct) {
 //       setProducts(products.map(p => p._id === currentProduct._id ? data.product || data : p));
 //     } else {
 //       setProducts([...products, data.product || data]);
 //     }
-    
+
 //     setShowAddModal(false);
 //     resetForm();
 //   } catch (err) {
@@ -599,7 +594,6 @@
 //     alert('Failed to save product. See console for details.');
 //   }
 // };
-
 
 //   const handleInputChange = (e) => {
 //     const { name, value } = e.target;
@@ -691,9 +685,9 @@
 //                   <td className="px-6 py-4 whitespace-nowrap">
 //                     <div className="flex items-center">
 //                       <div className="flex-shrink-0 h-10 w-10">
-//                         <img 
-//                           className="h-10 w-10 rounded-md object-cover" 
-//                           src={product.img || product.image || '/placeholder.png'} 
+//                         <img
+//                           className="h-10 w-10 rounded-md object-cover"
+//                           src={product.img || product.image || '/placeholder.png'}
 //                           alt={product.title || product.name}
 //                           onError={(e) => { e.target.src = '/placeholder.png'; }}
 //                         />
@@ -778,9 +772,9 @@
 //                     <div className="flex items-start space-x-4">
 //                       {formData.img && (
 //                         <div className="relative">
-//                           <img 
-//                             src={formData.img} 
-//                             alt="Preview" 
+//                           <img
+//                             src={formData.img}
+//                             alt="Preview"
 //                             className="h-24 w-24 object-cover rounded-md border"
 //                             onError={(e) => { e.target.src = '/placeholder.png'; }}
 //                           />
@@ -993,33 +987,956 @@
 //   );
 // }
 
+// // pages/admin/products/index.js
+// import { useState, useEffect } from "react";
+// import { useRouter } from "next/router";
+// import {
+//   FiEdit,
+//   FiTrash2,
+//   FiPlus,
+//   FiSearch,
+//   FiUpload,
+//   FiX,
+// } from "react-icons/fi";
+
+// import dynamic from "next/dynamic";
+// import "react-quill/dist/quill.snow.css"; // editor styles
+
+// export default function Products() {
+//   const [products, setProducts] = useState([]);
+//   const [filteredProducts, setFilteredProducts] = useState([]);
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [showAddModal, setShowAddModal] = useState(false);
+//   const [currentProduct, setCurrentProduct] = useState(null);
+//   const [uploading, setUploading] = useState(false);
+//   const [uploadError, setUploadError] = useState("");
+//   const [formData, setFormData] = useState({
+//     title: "",
+//     slug: "",
+//     desc: "",
+//     img: "",
+//     images: [], // Additional images array
+//     category: "",
+//     size: "",
+//     color: "",
+//     price: "",
+//     availableQty: "",
+//   });
+//   const router = useRouter();
+
+//   useEffect(() => {
+//     const fetchProducts = async () => {
+//       try {
+//         setLoading(true);
+//         const token = localStorage.getItem("adminToken");
+//         const response = await fetch("/api/admin/products", {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         });
+
+//         if (!response.ok) {
+//           throw new Error("Failed to fetch products");
+//         }
+
+//         const data = await response.json();
+
+//         // Ensure data is an array before setting state
+//         if (Array.isArray(data)) {
+//           setProducts(data);
+//           setFilteredProducts(data);
+//         } else {
+//           console.error("Unexpected API response format:", data);
+//           setProducts([]);
+//           setFilteredProducts([]);
+//         }
+//       } catch (error) {
+//         console.error("Error fetching products:", error);
+//         setProducts([]);
+//         setFilteredProducts([]);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchProducts();
+//   }, []);
+
+//   useEffect(() => {
+//     const term = (searchTerm || "").toLowerCase();
+//     const filtered = products.filter((product) => {
+//       const title = (product.title || product.name || "")
+//         .toString()
+//         .toLowerCase();
+//       const desc = (product.desc || product.description || "")
+//         .toString()
+//         .toLowerCase();
+//       const cat = (product.category || "").toString().toLowerCase();
+//       return title.includes(term) || desc.includes(term) || cat.includes(term);
+//     });
+//     setFilteredProducts(filtered);
+//   }, [searchTerm, products]);
+
+//   const generateSlug = (title) => {
+//     return title
+//       .toLowerCase()
+//       .replace(/[^a-z0-9]+/g, "-")
+//       .replace(/^-+|-+$/g, "");
+//   };
+
+//   const handleImageUpload = async (e, isPrimary = true) => {
+//     const file = e.target.files[0];
+//     if (!file) return;
+
+//     if (!file.type.startsWith("image/")) {
+//       setUploadError("Please upload a valid image file");
+//       return;
+//     }
+
+//     if (file.size > 5 * 1024 * 1024) {
+//       setUploadError("Image size should be less than 5MB");
+//       return;
+//     }
+
+//     setUploading(true);
+//     setUploadError("");
+
+//     try {
+//       const formDataObj = new FormData();
+//       formDataObj.append("image", file);
+
+//       const token = localStorage.getItem("adminToken");
+
+//       const res = await fetch("/api/upload/cloudinary", {
+//         method: "POST",
+//         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+//         body: formDataObj,
+//       });
+
+//       const data = await res.json();
+
+//       if (!res.ok) {
+//         throw new Error(data.error || "Failed to upload image");
+//       }
+
+//       if (data.secure_url || data.url) {
+//         const imageUrl = data.secure_url || data.url;
+
+//         if (isPrimary) {
+//           // Set as primary image
+//           setFormData((prev) => ({
+//             ...prev,
+//             img: imageUrl,
+//           }));
+//         } else {
+//           // Add to additional images
+//           setFormData((prev) => ({
+//             ...prev,
+//             images: [...prev.images, imageUrl],
+//           }));
+//         }
+//         setUploadError("");
+//       } else {
+//         throw new Error("No URL returned from server");
+//       }
+//     } catch (err) {
+//       console.error("Error uploading image:", err);
+//       setUploadError(err.message || "Failed to upload image");
+//     } finally {
+//       setUploading(false);
+//     }
+//   };
+
+//   const removeAdditionalImage = (index) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       images: prev.images.filter((_, i) => i !== index),
+//     }));
+//   };
+
+//   const handleEdit = (product) => {
+//     setCurrentProduct(product);
+//     setFormData({
+//       title: product.title || product.name || "",
+//       slug: product.slug || "",
+//       desc: product.desc || product.description || "",
+//       img: product.img || product.image || "",
+//       images: product.images || [],
+//       category: product.category || "",
+//       size: product.size || "",
+//       color: product.color || "",
+//       price: product.price || "",
+//       availableQty: product.availableQty || product.countInStock || "",
+//     });
+//     setShowAddModal(true);
+//   };
+
+//   const handleDelete = async (productId) => {
+//     if (window.confirm("Are you sure you want to delete this product?")) {
+//       try {
+//         const token = localStorage.getItem("adminToken");
+//         await fetch(`/api/admin/products/${productId}`, {
+//           method: "DELETE",
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         });
+//         setProducts(products.filter((p) => p._id !== productId));
+//       } catch (error) {
+//         console.error("Error deleting product:", error);
+//       }
+//     }
+//   };
+
+//   // const handleSubmit = async (e) => {
+//   //   e.preventDefault();
+//   //   if (!formData.title.trim()) { alert('Please enter product title'); return; }
+//   //   if (!formData.desc.trim()) { alert('Please enter product description'); return; }
+//   //   if (!formData.img.trim()) { alert('Please upload or paste an image URL'); return; }
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+
+//     // Basic validation
+//     if (!formData.title.trim()) {
+//       alert("Please enter product title");
+//       return;
+//     }
+//     if (!formData.desc.trim()) {
+//       alert("Please enter product description");
+//       return;
+//     }
+//     if (!formData.img.trim()) {
+//       alert("Please upload or paste a primary image URL");
+//       return;
+//     }
+//     if (!formData.price || Number(formData.price) <= 0) {
+//       alert("Please enter a valid price");
+//       return;
+//     }
+//     if (
+//       formData.availableQty === "" ||
+//       parseInt(formData.availableQty, 10) < 0
+//     ) {
+//       alert("Please enter a valid quantity");
+//       return;
+//     }
+
+//     try {
+//       const token = localStorage.getItem("adminToken");
+//       const url = currentProduct
+//         ? `/api/admin/products/${currentProduct._id}`
+//         : "/api/admin/products";
+
+//       // Prepare the product data
+//       const productData = {
+//         title: formData.title.trim(),
+//         desc: formData.desc.trim(),
+//         img: formData.img.trim(),
+//         images: Array.isArray(formData.images)
+//           ? formData.images.filter((img) => img && img.trim())
+//           : [],
+//         category: formData.category?.trim() || "",
+//         size: formData.size?.trim() || "",
+//         color: formData.color?.trim() || "",
+//         price: Number(formData.price),
+//         availableQty: parseInt(formData.availableQty, 10),
+//       };
+
+//       // For updates, tell the server to replace existing images
+//       if (currentProduct) {
+//         productData.replaceImages = true;
+//       }
+
+//       const response = await fetch(url, {
+//         method: currentProduct ? "PUT" : "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+//         },
+//         body: JSON.stringify(productData),
+//       });
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         if (data.errors) {
+//           const firstErr = Object.values(data.errors)[0];
+//           alert(firstErr || "Validation error");
+//         } else {
+//           alert(data.error || data.message || "Failed to save product");
+//         }
+//         console.error("API Error:", data);
+//         return;
+//       }
+
+//       // Update the products list
+//       if (currentProduct) {
+//         setProducts(
+//           products.map((p) =>
+//             p._id === currentProduct._id ? data.product || data : p
+//           )
+//         );
+//       } else {
+//         setProducts((prevProducts) => [...prevProducts, data.product || data]);
+//       }
+
+//       alert("Product saved successfully!");
+//       setShowAddModal(false);
+//       resetForm();
+//     } catch (err) {
+//       console.error("Error saving product:", err);
+//       alert("Failed to save product. See console for details.");
+//     }
+//   };
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prev) => ({
+//       ...prev,
+//       [name]: value,
+//     }));
+
+//     if (name === "title" && !currentProduct) {
+//       setFormData((prev) => ({
+//         ...prev,
+//         slug: generateSlug(value),
+//       }));
+//     }
+//   };
+
+//   const resetForm = () => {
+//     setFormData({
+//       title: "",
+//       slug: "",
+//       desc: "",
+//       img: "",
+//       images: [],
+//       category: "",
+//       size: "",
+//       color: "",
+//       price: "",
+//       availableQty: "",
+//     });
+//     setCurrentProduct(null);
+//     setUploadError("");
+//   };
+
+//   if (loading) {
+//     return <div className="p-6">Loading products...</div>;
+//   }
+
+//   const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+
+//   // optional toolbar / formats
+//   const quillModules = {
+//     toolbar: [
+//       [{ header: [1, 2, 3, false] }],
+//       ["bold", "italic", "underline", "strike"],
+//       [{ list: "ordered" }, { list: "bullet" }],
+//       ["link", "image"],
+//       ["clean"],
+//     ],
+//   };
+//   const quillFormats = [
+//     "header",
+//     "bold",
+//     "italic",
+//     "underline",
+//     "strike",
+//     "list",
+//     "bullet",
+//     "link",
+//     "image",
+//   ];
+
+//   return (
+//     <div className="p-6">
+//       <div className="flex justify-between items-center mb-6">
+//         <h1 className="text-2xl font-bold">Products</h1>
+//         <button
+//           onClick={() => {
+//             resetForm();
+//             setShowAddModal(true);
+//           }}
+//           className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center"
+//         >
+//           <FiPlus className="mr-2" /> Add Product
+//         </button>
+//       </div>
+
+//       <div className="mb-6">
+//         <div className="relative">
+//           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+//             <FiSearch className="text-gray-400" />
+//           </div>
+//           <input
+//             type="text"
+//             placeholder="Search products..."
+//             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+//             value={searchTerm}
+//             onChange={(e) => setSearchTerm(e.target.value)}
+//           />
+//         </div>
+//       </div>
+
+//       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+//         <table className="min-w-full divide-y divide-gray-200">
+//           <thead className="bg-gray-50">
+//             <tr>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                 Product
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                 Category
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                 Price
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                 Stock
+//               </th>
+//               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                 Actions
+//               </th>
+//             </tr>
+//           </thead>
+//           <tbody className="bg-white divide-y divide-gray-200">
+//             {filteredProducts.length === 0 ? (
+//               <tr>
+//                 <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+//                   No products found
+//                 </td>
+//               </tr>
+//             ) : (
+//               filteredProducts.map((product) => (
+//                 <tr key={product._id} className="hover:bg-gray-50">
+//                   <td className="px-6 py-4 whitespace-nowrap">
+//                     <div className="flex items-center">
+//                       <div className="flex-shrink-0 h-10 w-10 relative">
+//                         <img
+//                           className="h-10 w-10 rounded-md object-cover"
+//                           src={
+//                             product.img || product.image || "/placeholder.png"
+//                           }
+//                           alt={product.title || product.name}
+//                           onError={(e) => {
+//                             e.target.src = "/placeholder.png";
+//                           }}
+//                         />
+//                         {product.images && product.images.length > 0 && (
+//                           <span className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+//                             +{product.images.length}
+//                           </span>
+//                         )}
+//                       </div>
+//                       <div className="ml-4">
+//                         <div className="text-sm font-medium text-gray-900">
+//                           {product.title || product.name}
+//                         </div>
+//                        <div className="text-sm text-gray-500 truncate max-w-xs">
+//   {((product.desc || product.description || '')
+//     .replace(/<[^>]+>/g, '')        // remove HTML
+//     .split(/\s+/)                   // split words
+//     .slice(0, 10)                   // take first 10 words
+//     .join(' ')                      // join back
+//   ) + '...'}
+// </div>
+
+//                       </div>
+//                     </div>
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap">
+//                     <div className="text-sm text-gray-900">
+//                       {product.category}
+//                     </div>
+//                     {product.size && (
+//                       <div className="text-xs text-gray-500">
+//                         Size: {product.size}
+//                       </div>
+//                     )}
+//                     {product.color && (
+//                       <div className="text-xs text-gray-500">
+//                         Color: {product.color}
+//                       </div>
+//                     )}
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap">
+//                     <div className="text-sm text-gray-900">
+//                       ${product.price}
+//                     </div>
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap">
+//                     <span
+//                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+//                         (product.availableQty || product.countInStock || 0) > 0
+//                           ? "bg-green-100 text-green-800"
+//                           : "bg-red-100 text-red-800"
+//                       }`}
+//                     >
+//                       {(product.availableQty || product.countInStock || 0) > 0
+//                         ? `${product.availableQty || product.countInStock}`
+//                         : "Out of Stock"}
+//                     </span>
+//                   </td>
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     <button
+//                       onClick={() => handleEdit(product)}
+//                       className="text-indigo-600 hover:text-indigo-900 mr-3"
+//                       title="Edit"
+//                     >
+//                       <FiEdit className="h-5 w-5" />
+//                     </button>
+//                     <button
+//                       onClick={() => handleDelete(product._id)}
+//                       className="text-red-600 hover:text-red-900"
+//                       title="Delete"
+//                     >
+//                       <FiTrash2 className="h-5 w-5" />
+//                     </button>
+//                   </td>
+//                 </tr>
+//               ))
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* Add/Edit Product Modal */}
+//       {showAddModal && (
+//         <div className="fixed z-10 inset-0 overflow-y-auto">
+//           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+//             <div
+//               className="fixed inset-0 transition-opacity"
+//               aria-hidden="true"
+//               onClick={() => {
+//                 setShowAddModal(false);
+//                 resetForm();
+//               }}
+//             >
+//               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+//             </div>
+//             <span
+//               className="hidden sm:inline-block sm:align-middle sm:h-screen"
+//               aria-hidden="true"
+//             >
+//               &#8203;
+//             </span>
+//             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+//               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
+//                 <div className="flex justify-between items-center mb-4">
+//                   <h3 className="text-lg leading-6 font-medium text-gray-900">
+//                     {currentProduct ? "Edit Product" : "Add New Product"}
+//                   </h3>
+//                   <button
+//                     onClick={() => {
+//                       setShowAddModal(false);
+//                       resetForm();
+//                     }}
+//                     className="text-gray-400 hover:text-gray-600"
+//                   >
+//                     <FiX className="h-6 w-6" />
+//                   </button>
+//                 </div>
+//                 <form onSubmit={handleSubmit}>
+//                   {/* Primary Product Image Upload */}
+//                   <div className="mb-4">
+//                     <label className="block text-gray-700 text-sm font-bold mb-2">
+//                       Primary Image <span className="text-red-500">*</span>
+//                     </label>
+//                     <div className="flex items-start space-x-4">
+//                       {formData.img && (
+//                         <div className="relative">
+//                           <img
+//                             src={formData.img}
+//                             alt="Preview"
+//                             className="h-24 w-24 object-cover rounded-md border"
+//                             onError={(e) => {
+//                               e.target.src = "/placeholder.png";
+//                             }}
+//                           />
+//                           <button
+//                             type="button"
+//                             onClick={() =>
+//                               setFormData((prev) => ({ ...prev, img: "" }))
+//                             }
+//                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+//                           >
+//                             <FiX className="h-3 w-3" />
+//                           </button>
+//                         </div>
+//                       )}
+//                       <div className="flex-1">
+//                         <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-indigo-500 bg-gray-50">
+//                           <FiUpload className="mr-2" />
+//                           <span className="text-sm text-gray-600">
+//                             {uploading
+//                               ? "Uploading..."
+//                               : "Upload Primary Image"}
+//                           </span>
+//                           <input
+//                             type="file"
+//                             accept="image/*"
+//                             onChange={(e) => handleImageUpload(e, true)}
+//                             className="hidden"
+//                             disabled={uploading}
+//                           />
+//                         </label>
+//                         {uploadError && (
+//                           <p className="text-xs text-red-500 mt-1">
+//                             {uploadError}
+//                           </p>
+//                         )}
+//                         <p className="text-xs text-gray-500 mt-1">
+//                           Supported: JPG, PNG, GIF (Max 5MB)
+//                         </p>
+//                       </div>
+//                     </div>
+//                     <div className="mt-2">
+//                       <input
+//                         type="url"
+//                         name="img"
+//                         value={formData.img}
+//                         onChange={handleInputChange}
+//                         placeholder="Or paste image URL here"
+//                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                         required
+//                       />
+//                     </div>
+//                   </div>
+
+//                   {/* Additional Images */}
+//                   <div className="mb-4">
+//                     <label className="block text-gray-700 text-sm font-bold mb-2">
+//                       Additional Images (Optional)
+//                     </label>
+
+//                     {/* Display existing additional images */}
+//                     {formData.images.length > 0 && (
+//                       <div className="flex flex-wrap gap-2 mb-3">
+//                         {formData.images.map((imageUrl, index) => (
+//                           <div key={index} className="relative">
+//                             <img
+//                               src={imageUrl}
+//                               alt={`Additional ${index + 1}`}
+//                               className="h-20 w-20 object-cover rounded-md border"
+//                               onError={(e) => {
+//                                 e.target.src = "/placeholder.png";
+//                               }}
+//                             />
+//                             <button
+//                               type="button"
+//                               onClick={() => removeAdditionalImage(index)}
+//                               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+//                             >
+//                               <FiX className="h-3 w-3" />
+//                             </button>
+//                           </div>
+//                         ))}
+//                       </div>
+//                     )}
+
+//                     {/* Upload button for additional images */}
+//                     <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-indigo-500 bg-gray-50">
+//                       <FiUpload className="mr-2" />
+//                       <span className="text-sm text-gray-600">
+//                         {uploading ? "Uploading..." : "Add More Images"}
+//                       </span>
+//                       <input
+//                         type="file"
+//                         accept="image/*"
+//                         onChange={(e) => handleImageUpload(e, false)}
+//                         className="hidden"
+//                         disabled={uploading}
+//                       />
+//                     </label>
+//                     <p className="text-xs text-gray-500 mt-1">
+//                       Upload multiple images one by one
+//                     </p>
+//                   </div>
+
+//                   {/* Title */}
+//                   <div className="mb-4">
+//                     <label
+//                       className="block text-gray-700 text-sm font-bold mb-2"
+//                       htmlFor="title"
+//                     >
+//                       Product Title <span className="text-red-500">*</span>
+//                     </label>
+//                     <input
+//                       type="text"
+//                       id="title"
+//                       name="title"
+//                       value={formData.title}
+//                       onChange={handleInputChange}
+//                       placeholder="Enter product title"
+//                       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                       required
+//                     />
+//                   </div>
+
+//                   {/* Slug */}
+//                   <div className="mb-4">
+//                     <label
+//                       className="block text-gray-700 text-sm font-bold mb-2"
+//                       htmlFor="slug"
+//                     >
+//                       Slug (URL-friendly name)
+//                     </label>
+//                     <input
+//                       type="text"
+//                       id="slug"
+//                       name="slug"
+//                       value={formData.slug}
+//                       onChange={handleInputChange}
+//                       placeholder="auto-generated-from-title"
+//                       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50"
+//                     />
+//                     <p className="text-xs text-gray-500 mt-1">
+//                       Leave empty to auto-generate from title
+//                     </p>
+//                   </div>
+
+//                   {/* Description */}
+//                   {/* Description (rich text) */}
+//                   <div className="mb-4">
+//                     <label
+//                       className="block text-gray-700 text-sm font-bold mb-2"
+//                       htmlFor="desc"
+//                     >
+//                       Description <span className="text-red-500">*</span>
+//                     </label>
+
+//                     <div className="border rounded">
+//                       <ReactQuill
+//                         theme="snow"
+//                         value={formData.desc}
+//                         onChange={(value) =>
+//                           setFormData((prev) => ({ ...prev, desc: value }))
+//                         }
+//                         modules={quillModules}
+//                         formats={quillFormats}
+//                       />
+//                     </div>
+
+//                     <p className="text-xs text-gray-500 mt-1">
+//                       You can paste images or links. HTML will be saved.
+//                     </p>
+//                   </div>
+
+//                   {/* Category, Size, Color */}
+//                   <div className="grid grid-cols-3 gap-4 mb-4">
+//                     <div>
+//                       <label
+//                         className="block text-gray-700 text-sm font-bold mb-2"
+//                         htmlFor="category"
+//                       >
+//                         Category <span className="text-red-500">*</span>
+//                       </label>
+//                       <input
+//                         type="text"
+//                         id="category"
+//                         name="category"
+//                         value={formData.category}
+//                         onChange={handleInputChange}
+//                         placeholder="e.g. Electronics"
+//                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                         required
+//                       />
+//                     </div>
+//                     <div>
+//                       <label
+//                         className="block text-gray-700 text-sm font-bold mb-2"
+//                         htmlFor="size"
+//                       >
+//                         Size
+//                       </label>
+//                       <input
+//                         type="text"
+//                         id="size"
+//                         name="size"
+//                         value={formData.size}
+//                         onChange={handleInputChange}
+//                         placeholder="S, M, L, XL"
+//                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                       />
+//                     </div>
+//                     <div>
+//                       <label
+//                         className="block text-gray-700 text-sm font-bold mb-2"
+//                         htmlFor="color"
+//                       >
+//                         Color
+//                       </label>
+//                       <input
+//                         type="text"
+//                         id="color"
+//                         name="color"
+//                         value={formData.color}
+//                         onChange={handleInputChange}
+//                         placeholder="Red, Blue, etc."
+//                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                       />
+//                     </div>
+//                   </div>
+
+//                   {/* Price and Stock */}
+//                   <div className="grid grid-cols-2 gap-4 mb-4">
+//                     <div>
+//                       <label
+//                         className="block text-gray-700 text-sm font-bold mb-2"
+//                         htmlFor="price"
+//                       >
+//                         Price ($) <span className="text-red-500">*</span>
+//                       </label>
+//                       <input
+//                         type="number"
+//                         id="price"
+//                         name="price"
+//                         value={formData.price}
+//                         onChange={handleInputChange}
+//                         step="0.01"
+//                         min="0"
+//                         placeholder="0.00"
+//                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                         required
+//                       />
+//                     </div>
+//                     <div>
+//                       <label
+//                         className="block text-gray-700 text-sm font-bold mb-2"
+//                         htmlFor="availableQty"
+//                       >
+//                         Available Quantity{" "}
+//                         <span className="text-red-500">*</span>
+//                       </label>
+//                       <input
+//                         type="number"
+//                         id="availableQty"
+//                         name="availableQty"
+//                         value={formData.availableQty}
+//                         onChange={handleInputChange}
+//                         min="0"
+//                         placeholder="0"
+//                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                         required
+//                       />
+//                     </div>
+//                   </div>
+
+//                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse -mx-4 -mb-4 mt-6">
+//                     <button
+//                       type="submit"
+//                       disabled={uploading}
+//                       className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+//                     >
+//                       {uploading
+//                         ? "Uploading..."
+//                         : currentProduct
+//                         ? "Update Product"
+//                         : "Add Product"}
+//                     </button>
+//                     <button
+//                       type="button"
+//                       className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-6 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+//                       onClick={() => {
+//                         setShowAddModal(false);
+//                         resetForm();
+//                       }}
+//                     >
+//                       Cancel
+//                     </button>
+//                   </div>
+//                 </form>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
 
 // pages/admin/products/index.js
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import AdminLayout from '../../../components/AdminLayout';
-import { FiEdit, FiTrash2, FiPlus, FiSearch, FiUpload, FiX } from 'react-icons/fi';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import {
+  FiEdit,
+  FiTrash2,
+  FiPlus,
+  FiSearch,
+  FiUpload,
+  FiX,
+} from "react-icons/fi";
 
+import dynamic from "next/dynamic";
+import "react-quill/dist/quill.snow.css"; // editor styles
+
+// ----------------------
+// Module-scope Quill setup (stable across renders)
+// ----------------------
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+
+export const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link", "image"],
+    ["clean"],
+  ],
+};
+
+export const quillFormats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list",
+  "bullet",
+  "link",
+  "image",
+];
+
+// Memoized wrapper to keep the editor stable when parent re-renders.
+// It still updates when `value` prop changes.
+const QuillWrapper = React.memo(function QuillWrapper({ value, onChange }) {
+  return (
+    <ReactQuill
+      theme="snow"
+      value={value}
+      onChange={onChange}
+      modules={quillModules}
+      formats={quillFormats}
+    />
+  );
+});
+
+// ----------------------
+// Component
+// ----------------------
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
+  const [uploadError, setUploadError] = useState("");
   const [formData, setFormData] = useState({
-    title: '',
-    slug: '',
-    desc: '',
-    img: '',
+    title: "",
+    slug: "",
+    desc: "",
+    img: "",
     images: [], // Additional images array
-    category: '',
-    size: '',
-    color: '',
-    price: '',
-    availableQty: ''
+    category: "",
+    size: "",
+    color: "",
+    price: "",
+    availableQty: "",
   });
   const router = useRouter();
 
@@ -1027,30 +1944,30 @@ export default function Products() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch('/api/admin/products', {
+        const token = localStorage.getItem("adminToken");
+        const response = await fetch("/api/admin/products", {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to fetch products');
+          throw new Error("Failed to fetch products");
         }
-        
+
         const data = await response.json();
-        
+
         // Ensure data is an array before setting state
         if (Array.isArray(data)) {
           setProducts(data);
           setFilteredProducts(data);
         } else {
-          console.error('Unexpected API response format:', data);
+          console.error("Unexpected API response format:", data);
           setProducts([]);
           setFilteredProducts([]);
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching products:", error);
         setProducts([]);
         setFilteredProducts([]);
       } finally {
@@ -1062,11 +1979,15 @@ export default function Products() {
   }, []);
 
   useEffect(() => {
-    const term = (searchTerm || '').toLowerCase();
-    const filtered = products.filter(product => {
-      const title = (product.title || product.name || '').toString().toLowerCase();
-      const desc = (product.desc || product.description || '').toString().toLowerCase();
-      const cat = (product.category || '').toString().toLowerCase();
+    const term = (searchTerm || "").toLowerCase();
+    const filtered = products.filter((product) => {
+      const title = (product.title || product.name || "")
+        .toString()
+        .toLowerCase();
+      const desc = (product.desc || product.description || "")
+        .toString()
+        .toLowerCase();
+      const cat = (product.category || "").toString().toLowerCase();
       return title.includes(term) || desc.includes(term) || cat.includes(term);
     });
     setFilteredProducts(filtered);
@@ -1075,8 +1996,8 @@ export default function Products() {
   const generateSlug = (title) => {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
   };
 
   const handleImageUpload = async (e, isPrimary = true) => {
@@ -1116,7 +2037,7 @@ export default function Products() {
 
       if (data.secure_url || data.url) {
         const imageUrl = data.secure_url || data.url;
-        
+
         if (isPrimary) {
           // Set as primary image
           setFormData((prev) => ({
@@ -1143,95 +2064,93 @@ export default function Products() {
   };
 
   const removeAdditionalImage = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: prev.images.filter((_, i) => i !== index),
     }));
   };
 
   const handleEdit = (product) => {
     setCurrentProduct(product);
     setFormData({
-      title: product.title || product.name || '',
-      slug: product.slug || '',
-      desc: product.desc || product.description || '',
-      img: product.img || product.image || '',
+      title: product.title || product.name || "",
+      slug: product.slug || "",
+      desc: product.desc || product.description || "",
+      img: product.img || product.image || "",
       images: product.images || [],
-      category: product.category || '',
-      size: product.size || '',
-      color: product.color || '',
-      price: product.price || '',
-      availableQty: product.availableQty || product.countInStock || ''
+      category: product.category || "",
+      size: product.size || "",
+      color: product.color || "",
+      price: product.price || "",
+      availableQty: product.availableQty || product.countInStock || "",
     });
     setShowAddModal(true);
   };
 
   const handleDelete = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        const token = localStorage.getItem('adminToken');
+        const token = localStorage.getItem("adminToken");
         await fetch(`/api/admin/products/${productId}`, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
-        setProducts(products.filter(p => p._id !== productId));
+        setProducts(products.filter((p) => p._id !== productId));
       } catch (error) {
-        console.error('Error deleting product:', error);
+        console.error("Error deleting product:", error);
       }
     }
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!formData.title.trim()) { alert('Please enter product title'); return; }
-  //   if (!formData.desc.trim()) { alert('Please enter product description'); return; }
-  //   if (!formData.img.trim()) { alert('Please upload or paste an image URL'); return; }
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
-    if (!formData.title.trim()) { 
-      alert('Please enter product title'); 
-      return; 
+    if (!formData.title.trim()) {
+      alert("Please enter product title");
+      return;
     }
-    if (!formData.desc.trim()) { 
-      alert('Please enter product description'); 
-      return; 
+    if (!formData.desc || !formData.desc.trim()) {
+      alert("Please enter product description");
+      return;
     }
-    if (!formData.img.trim()) { 
-      alert('Please upload or paste a primary image URL'); 
-      return; 
+    if (!formData.img.trim()) {
+      alert("Please upload or paste a primary image URL");
+      return;
     }
-    if (!formData.price || Number(formData.price) <= 0) { 
-      alert('Please enter a valid price'); 
-      return; 
+    if (!formData.price || Number(formData.price) <= 0) {
+      alert("Please enter a valid price");
+      return;
     }
-    if (formData.availableQty === '' || parseInt(formData.availableQty, 10) < 0) { 
-      alert('Please enter a valid quantity'); 
-      return; 
+    if (
+      formData.availableQty === "" ||
+      parseInt(formData.availableQty, 10) < 0
+    ) {
+      alert("Please enter a valid quantity");
+      return;
     }
-    
+
     try {
-      const token = localStorage.getItem('adminToken');
-      const url = currentProduct 
-        ? `/api/admin/products/${currentProduct._id}` 
-        : '/api/admin/products';
-      
+      const token = localStorage.getItem("adminToken");
+      const url = currentProduct
+        ? `/api/admin/products/${currentProduct._id}`
+        : "/api/admin/products";
+
       // Prepare the product data
       const productData = {
         title: formData.title.trim(),
         desc: formData.desc.trim(),
         img: formData.img.trim(),
-        images: Array.isArray(formData.images) 
-          ? formData.images.filter(img => img && img.trim()) 
+        images: Array.isArray(formData.images)
+          ? formData.images.filter((img) => img && img.trim())
           : [],
-        category: formData.category?.trim() || '',
-        size: formData.size?.trim() || '',
-        color: formData.color?.trim() || '',
+        category: formData.category?.trim() || "",
+        size: formData.size?.trim() || "",
+        color: formData.color?.trim() || "",
         price: Number(formData.price),
-        availableQty: parseInt(formData.availableQty, 10)
+        availableQty: parseInt(formData.availableQty, 10),
       };
 
       // For updates, tell the server to replace existing images
@@ -1240,74 +2159,77 @@ export default function Products() {
       }
 
       const response = await fetch(url, {
-        method: currentProduct ? 'PUT' : 'POST',
+        method: currentProduct ? "PUT" : "POST",
         headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(productData)
+        body: JSON.stringify(productData),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         if (data.errors) {
           const firstErr = Object.values(data.errors)[0];
-          alert(firstErr || 'Validation error');
+          alert(firstErr || "Validation error");
         } else {
-          alert(data.error || data.message || 'Failed to save product');
+          alert(data.error || data.message || "Failed to save product");
         }
-        console.error('API Error:', data);
+        console.error("API Error:", data);
         return;
       }
-      
+
       // Update the products list
       if (currentProduct) {
-        setProducts(products.map(p => p._id === currentProduct._id ? (data.product || data) : p));
+        setProducts(
+          products.map((p) =>
+            p._id === currentProduct._id ? data.product || data : p
+          )
+        );
       } else {
-        setProducts(prevProducts => [...prevProducts, (data.product || data)]);
+        setProducts((prevProducts) => [...prevProducts, data.product || data]);
       }
-      
-      alert('Product saved successfully!');
+
+      alert("Product saved successfully!");
       setShowAddModal(false);
       resetForm();
-      
     } catch (err) {
-      console.error('Error saving product:', err);
-      alert('Failed to save product. See console for details.');
+      console.error("Error saving product:", err);
+      alert("Failed to save product. See console for details.");
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
-    if (name === 'title' && !currentProduct) {
-      setFormData(prev => ({
+    if (name === "title" && !currentProduct) {
+      setFormData((prev) => ({
         ...prev,
-        slug: generateSlug(value)
+        slug: generateSlug(value),
       }));
     }
   };
 
   const resetForm = () => {
     setFormData({
-      title: '',
-      slug: '',
-      desc: '',
-      img: '',
+      title: "",
+      slug: "",
+      desc: "",
+      img: "",
       images: [],
-      category: '',
-      size: '',
-      color: '',
-      price: '',
-      availableQty: ''
+      category: "",
+      size: "",
+      color: "",
+      price: "",
+      availableQty: "",
     });
     setCurrentProduct(null);
-    setUploadError('');
+    setUploadError("");
   };
 
   if (loading) {
@@ -1348,11 +2270,21 @@ export default function Products() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Product
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Stock
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -1368,11 +2300,13 @@ export default function Products() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 relative">
-                        <img 
-                          className="h-10 w-10 rounded-md object-cover" 
-                          src={product.img || product.image || '/placeholder.png'} 
+                        <img
+                          className="h-10 w-10 rounded-md object-cover"
+                          src={product.img || product.image || "/placeholder.png"}
                           alt={product.title || product.name}
-                          onError={(e) => { e.target.src = '/placeholder.png'; }}
+                          onError={(e) => {
+                            e.target.src = "/placeholder.png";
+                          }}
                         />
                         {product.images && product.images.length > 0 && (
                           <span className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
@@ -1381,24 +2315,43 @@ export default function Products() {
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.title || product.name}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{product.desc || product.description}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {product.title || product.name}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                          {((product.desc || product.description || "")
+                            .replace(/<[^>]+>/g, "") // remove HTML
+                            .split(/\s+/) // split words
+                            .slice(0, 10) // take first 10 words
+                            .join(" ") // join back
+                          ) + "..."}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{product.category}</div>
-                    {product.size && <div className="text-xs text-gray-500">Size: {product.size}</div>}
-                    {product.color && <div className="text-xs text-gray-500">Color: {product.color}</div>}
+                    {product.size && (
+                      <div className="text-xs text-gray-500">Size: {product.size}</div>
+                    )}
+                    {product.color && (
+                      <div className="text-xs text-gray-500">Color: {product.color}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">${product.price}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      (product.availableQty || product.countInStock || 0) > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {(product.availableQty || product.countInStock || 0) > 0 ? `${product.availableQty || product.countInStock}` : 'Out of Stock'}
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        (product.availableQty || product.countInStock || 0) > 0
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {(product.availableQty || product.countInStock || 0) > 0
+                        ? `${product.availableQty || product.countInStock}`
+                        : "Out of Stock"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1428,18 +2381,24 @@ export default function Products() {
       {showAddModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true" onClick={() => {
-              setShowAddModal(false);
-              resetForm();
-            }}>
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+              onClick={() => {
+                setShowAddModal(false);
+                resetForm();
+              }}
+            >
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+              &#8203;
+            </span>
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    {currentProduct ? 'Edit Product' : 'Add New Product'}
+                    {currentProduct ? "Edit Product" : "Add New Product"}
                   </h3>
                   <button
                     onClick={() => {
@@ -1460,15 +2419,17 @@ export default function Products() {
                     <div className="flex items-start space-x-4">
                       {formData.img && (
                         <div className="relative">
-                          <img 
-                            src={formData.img} 
-                            alt="Preview" 
+                          <img
+                            src={formData.img}
+                            alt="Preview"
                             className="h-24 w-24 object-cover rounded-md border"
-                            onError={(e) => { e.target.src = '/placeholder.png'; }}
+                            onError={(e) => {
+                              e.target.src = "/placeholder.png";
+                            }}
                           />
                           <button
                             type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, img: '' }))}
+                            onClick={() => setFormData((prev) => ({ ...prev, img: "" }))}
                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                           >
                             <FiX className="h-3 w-3" />
@@ -1479,7 +2440,7 @@ export default function Products() {
                         <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-indigo-500 bg-gray-50">
                           <FiUpload className="mr-2" />
                           <span className="text-sm text-gray-600">
-                            {uploading ? 'Uploading...' : 'Upload Primary Image'}
+                            {uploading ? "Uploading..." : "Upload Primary Image"}
                           </span>
                           <input
                             type="file"
@@ -1489,12 +2450,8 @@ export default function Products() {
                             disabled={uploading}
                           />
                         </label>
-                        {uploadError && (
-                          <p className="text-xs text-red-500 mt-1">{uploadError}</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          Supported: JPG, PNG, GIF (Max 5MB)
-                        </p>
+                        {uploadError && <p className="text-xs text-red-500 mt-1">{uploadError}</p>}
+                        <p className="text-xs text-gray-500 mt-1">Supported: JPG, PNG, GIF (Max 5MB)</p>
                       </div>
                     </div>
                     <div className="mt-2">
@@ -1512,20 +2469,20 @@ export default function Products() {
 
                   {/* Additional Images */}
                   <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Additional Images (Optional)
-                    </label>
-                    
+                    <label className="block text-gray-700 text-sm font-bold mb-2">Additional Images (Optional)</label>
+
                     {/* Display existing additional images */}
                     {formData.images.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
                         {formData.images.map((imageUrl, index) => (
                           <div key={index} className="relative">
-                            <img 
-                              src={imageUrl} 
-                              alt={`Additional ${index + 1}`} 
+                            <img
+                              src={imageUrl}
+                              alt={`Additional ${index + 1}`}
                               className="h-20 w-20 object-cover rounded-md border"
-                              onError={(e) => { e.target.src = '/placeholder.png'; }}
+                              onError={(e) => {
+                                e.target.src = "/placeholder.png";
+                              }}
                             />
                             <button
                               type="button"
@@ -1542,20 +2499,10 @@ export default function Products() {
                     {/* Upload button for additional images */}
                     <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-indigo-500 bg-gray-50">
                       <FiUpload className="mr-2" />
-                      <span className="text-sm text-gray-600">
-                        {uploading ? 'Uploading...' : 'Add More Images'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, false)}
-                        className="hidden"
-                        disabled={uploading}
-                      />
+                      <span className="text-sm text-gray-600">{uploading ? "Uploading..." : "Add More Images"}</span>
+                      <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, false)} className="hidden" disabled={uploading} />
                     </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Upload multiple images one by one
-                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Upload multiple images one by one</p>
                   </div>
 
                   {/* Title */}
@@ -1592,21 +2539,20 @@ export default function Products() {
                     <p className="text-xs text-gray-500 mt-1">Leave empty to auto-generate from title</p>
                   </div>
 
-                  {/* Description */}
+                  {/* Description (rich text) */}
                   <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="desc">
                       Description <span className="text-red-500">*</span>
                     </label>
-                    <textarea
-                      id="desc"
-                      name="desc"
-                      value={formData.desc}
-                      onChange={handleInputChange}
-                      rows="3"
-                      placeholder="Enter product description"
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    ></textarea>
+
+                    <div className="border rounded">
+                      <QuillWrapper
+                        value={formData.desc}
+                        onChange={(value) => setFormData((prev) => ({ ...prev, desc: value }))}
+                      />
+                    </div>
+
+                    <p className="text-xs text-gray-500 mt-1">You can paste images or links. HTML will be saved.</p>
                   </div>
 
                   {/* Category, Size, Color */}
@@ -1699,7 +2645,7 @@ export default function Products() {
                       disabled={uploading}
                       className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
-                      {uploading ? 'Uploading...' : (currentProduct ? 'Update Product' : 'Add Product')}
+                      {uploading ? "Uploading..." : currentProduct ? "Update Product" : "Add Product"}
                     </button>
                     <button
                       type="button"

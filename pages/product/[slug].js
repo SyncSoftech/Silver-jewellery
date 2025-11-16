@@ -2300,7 +2300,7 @@ const Post = ({
               </div>
 
               {/* Description */}
-              <p className="text-gray-700 leading-relaxed mb-6 text-base">{product?.desc || ''}</p>
+              <p className="text-gray-700 leading-relaxed mb-6 text-base" dangerouslySetInnerHTML={{ __html: product.desc || '' }} />
 
               {/* Variant Selectors */}
               {(color !== '' || size !== '') && (
