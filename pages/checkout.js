@@ -1331,6 +1331,12 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                           {selectedAddress === address._id && (
                             <div className='h-4 w-4 rounded-full flex items-center justify-center text-white' style={{ background: '#0BAF16' }}>
                               <AiOutlineCheck size={10} />
+                            
+                            </div>
+                          )}
+                          {selectedAddress !== address._id && (
+                            <div className='h-4 w-4 rounded-full flex items-center justify-center text-white' style={{ border: '1px solid #8B6F5E' }}>
+                              <AiOutlineCheck size={10} />
                             </div>
                           )}
                           {address.isDefault && (
@@ -1428,9 +1434,9 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
               <h2 className='text-lg font-semibold mb-4' >Order Summary</h2>
               
               <div className='space-y-2 mb-4 pb-4' style={{ borderBottom: '1px solid rgba(139, 111, 94, 0.1)' }}>
-                <div className='flex justify-between text-sm'>
+                <div className='flex  justify-between text-sm'>
                   <span >Subtotal</span>
-                  <span className='font-medium' >₹{checkoutSubTotal}</span>
+                  <span className='font-medium font-sans' >₹{checkoutSubTotal}</span>
                 </div>
                 <div className='flex justify-between text-sm'>
                   <span >Shipping</span>
@@ -1440,7 +1446,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
               
               <div className='flex justify-between text-base font-bold mb-4'>
                 <span >Total</span>
-                <span >₹{checkoutSubTotal}</span>
+                <span className='font-medium font-sans' >₹{checkoutSubTotal}</span>
               </div>
               
               {/* Stock Warning */}

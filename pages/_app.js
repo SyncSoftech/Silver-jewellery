@@ -817,8 +817,10 @@ export default function App({ Component, pageProps }) {
 
       {isAdminRoute ? <AdminLayout>{PageContent}</AdminLayout> : (
         <>
-          {PageContent}
+        <div className="mt-24">
+          {PageContent }
           <Footer />
+        </div>
         </>
       )}
     </>
