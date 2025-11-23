@@ -22,35 +22,93 @@ const handler = async (req, res) => {
 
     // PUT /api/coupons/:id  (partial update)
     if (method === 'PUT') {
-      const updates = { ...req.body };
+    //   const updates = { ...req.body };
 
-      // If code is provided, normalize it
-      if (typeof updates.code !== 'undefined') {
-        updates.code = String(updates.code).trim().toUpperCase();
-      }
+    //   // If code is provided, normalize it
+    //   if (typeof updates.code !== 'undefined') {
+    //     updates.code = String(updates.code).trim().toUpperCase();
+    //   }
 
-      // Convert empty string numerics to null where appropriate
-      if (updates.maxDiscount === '') updates.maxDiscount = null;
-      if (updates.usageLimit === '') updates.usageLimit = null;
+    //   // Convert empty string numerics to null where appropriate
+    //   if (updates.maxDiscount === '') updates.maxDiscount = null;
+    //   if (updates.usageLimit === '') updates.usageLimit = null;
 
-      // Prevent updating createdAt/_id
-      delete updates._id;
-      delete updates.createdAt;
-      delete updates.__v;
+    //   // Prevent updating createdAt/_id
+    //   delete updates._id;
+    //   delete updates.createdAt;
+    //   delete updates.__v;
 
-      // If code is being changed to an existing code, handle duplicate error
-      try {
-        const coupon = await Coupon.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-        if (!coupon) return res.status(404).json({ success: false, message: 'Coupon not found' });
-        return res.status(200).json({ success: true, data: coupon });
-      } catch (err) {
-        // handle duplicate key on code
-        if (err && err.code === 11000) {
-          return res.status(400).json({ success: false, message: 'Coupon code already exists', field: 'code' });
-        }
-        // validation errors
-        return res.status(400).json({ success: false, message: err.message || 'Failed to update coupon' });
-      }
+    //   // If code is being changed to an existing code, handle duplicate error
+    //   try {
+    //     const coupon = await Coupon.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+    //     if (!coupon) return res.status(404).json({ success: false, message: 'Coupon not found' });
+    //     return res.status(200).json({ success: true, data: coupon });
+    //   } catch (err) {
+    //     // handle duplicate key on code
+    //     if (err && err.code === 11000) {
+    //       return res.status(400).json({ success: false, message: 'Coupon code already exists', field: 'code' });
+    //     }
+    //     // validation errors
+    //     return res.status(400).json({ success: false, message: err.message || 'Failed to update coupon' });
+    //   }
+
+    // inside method === 'PUT' branch
+const updates = { ...req.body };
+
+// If code is provided, normalize it
+if (typeof updates.code !== 'undefined') {
+  updates.code = String(updates.code).trim().toUpperCase();
+}
+
+// Coerce empty strings for numeric fields to null
+if (updates.maxDiscount === '') updates.maxDiscount = null;
+if (updates.usageLimit === '') updates.usageLimit = null;
+
+// Normalize applyToAll (if present)
+if (typeof updates.applyToAll !== 'undefined') {
+  updates.applyToAll = Boolean(updates.applyToAll);
+}
+
+// helper to normalize product/category arrays (accept CSV or array)
+const normalizeIds = (v) => {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(String).filter(Boolean);
+  if (typeof v === 'string') {
+    return v.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+if (typeof updates.applyToAll !== 'undefined' && updates.applyToAll) {
+  // when applyToAll true, ignore any passed product/category lists
+  updates.applicableProducts = [];
+  updates.applicableCategories = [];
+} else {
+  if (typeof updates.applicableProducts !== 'undefined') {
+    updates.applicableProducts = normalizeIds(updates.applicableProducts);
+  }
+  if (typeof updates.applicableCategories !== 'undefined') {
+    updates.applicableCategories = normalizeIds(updates.applicableCategories);
+  }
+}
+
+// Prevent updating createdAt/_id
+delete updates._id;
+delete updates.createdAt;
+delete updates.__v;
+
+try {
+  const coupon = await Coupon.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+  if (!coupon) return res.status(404).json({ success: false, message: 'Coupon not found' });
+  return res.status(200).json({ success: true, data: coupon });
+} catch (err) {
+  // duplicate key
+  if (err && err.code === 11000) {
+    return res.status(400).json({ success: false, message: 'Coupon code already exists', field: 'code' });
+  }
+  return res.status(400).json({ success: false, message: err.message || 'Failed to update coupon' });
+}
+
     }
 
     // DELETE /api/coupons/:id
