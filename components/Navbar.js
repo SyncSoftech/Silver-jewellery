@@ -3850,11 +3850,16 @@ const Navbar = ({
   }
 
   return (
-    <div className='fixed top-0 left-0 right-0 flex flex-col md:flex-row md:justify-start justify-center items-center py-4 px-4 shadow-lg bg-gradient-to-r from-slate-50 via-white to-slate-50 z-50 border-b border-slate-200'>
-      <div className="logo md:mx-8 cursor-pointer mr-auto transition-transform hover:scale-105 duration-300">
-        <Link href={'/'}><Image width={200} height={40} src="/LOGO.jpg" alt="Logo" /></Link>
-      </div>
+    // <div className='fixed top-0 left-0 right-0 flex flex-col md:flex-row md:justify-start justify-center items-center py-4 px-4 shadow-lg bg-gradient-to-r from-gray-400 via-white to-white z-50 border-b border-slate-200'>
+    <div className='fixed top-0 left-0 right-0 flex flex-col md:flex-row md:justify-start justify-center items-center  px-4 shadow-lg text-white bg-gray-800 z-50 '>
+      <div className="logo md:mx-4 cursor-pointer transition-transform hover:scale-105 duration-300 flex items-center gap-2">
+  <Link href="/">
+    <div className="items-center m-auto gap-3">
+      <Image width={160} height={60} src="/LOGO.png" alt="Logo" className='m-auto'/>
       
+    </div>
+  </Link>
+</div>
       {/* Search Bar */}
       <div className="search-container mt-4 lg:mt-0 mb-2 lg:mb-0 relative mx-4 flex-1 max-w-2xl lg:max-w-sm">
         <div className="relative">
@@ -4024,13 +4029,13 @@ const Navbar = ({
               className='absolute right-8 bg-white shadow-xl top-9 rounded-xl px-6 py-5 w-40 border border-slate-100 backdrop-blur-sm'
             >
               <ul className='space-y-1'>
-                <Link href={'/myaccount'}><li className='py-2 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold'>My Account</li></Link>
-                <Link href={'/orders'}><li className='py-2 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold'>Orders</li></Link>
-                <span><li onClick={Logout} className='py-2 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold cursor-pointer'>LogOut</li></span>
+                <Link href={'/myaccount'}><li className='py-2 text-gray-500 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold'>My Account</li></Link>
+                <Link href={'/orders'}><li className='py-2 text-gray-500 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold'>Orders</li></Link>
+                <span><li onClick={Logout} className='py-2 text-gray-500 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold cursor-pointer'>LogOut</li></span>
               </ul>
             </div>
           )}
-          {user.value && <MdAccountCircle className='text-3xl md:text-3xl mx-2 text-slate-600 hover:text-slate-800 transition-all duration-300 hover:scale-110' />}
+          {user.value && <MdAccountCircle className='text-3xl md:text-3xl mx-2 text-white hover:text-white transition-all duration-300 hover:scale-110' />}
         </span>
 
         {!user.value && (
@@ -4042,7 +4047,7 @@ const Navbar = ({
         )}
 
         <div className='relative mx-2 group'>
-          <AiOutlineHeart onClick={toggleWishlist} className='text-3xl md:text-3xl text-slate-600 hover:text-red-500 transition-all duration-300 hover:scale-110' />
+          <AiOutlineHeart onClick={toggleWishlist} className='text-3xl md:text-3xl text-pink-700 hover:text-red-500 transition-all duration-300 hover:scale-110' />
           {wishlistItemCount > 0 && (
             <span className='absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-pink-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-md animate-pulse'>
               {wishlistItemCount}
@@ -4051,7 +4056,7 @@ const Navbar = ({
         </div>
 
         <div className='relative group'>
-          <CiShoppingCart onClick={toggleCart} className='text-3xl md:text-3xl text-slate-600 hover:text-slate-800 transition-all duration-300 hover:scale-110' />
+          <CiShoppingCart onClick={toggleCart} className='text-3xl md:text-3xl text-white hover:text-white transition-all duration-300 hover:scale-110' />
           {cartItemCount > 0 && (
             <span className='absolute -top-2 -right-2 bg-gradient-to-br from-slate-700 to-slate-900 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-md animate-pulse'>
               {cartItemCount}
