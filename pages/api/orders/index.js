@@ -19,9 +19,13 @@ const handler = async (req, res) => {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || !decoded.userId) {
-      return res.status(401).json({ success: false, error: 'Unauthorized: invalid token' });
-    }
+
+if (!decoded || !decoded.userId) {
+  return res.status(401).json({
+    success: false,
+    error: 'Unauthorized: invalid or expired token'
+  });
+}
 
     // find orders for this user, newest first
     const orders = await Order.find({ userId: decoded.userId })

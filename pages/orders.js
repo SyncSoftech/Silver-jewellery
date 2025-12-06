@@ -676,9 +676,10 @@ export default function Orders() {
           }
         });
         if (res.status === 401) {
-          router.push('/login?redirect=/orders');
-          return;
-        }
+  localStorage.removeItem("token");   // 🆕 IMPORTANT
+  router.push('/login?redirect=/orders');
+  return;
+}
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error || `Failed to fetch orders (${res.status})`);
