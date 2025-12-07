@@ -4635,7 +4635,7 @@ const Navbar = ({
     <div className="fixed top-0 left-0 right-0 flex flex-col justify-start md:flex-row md:justify-start lg:justify-center  lg:items-center px-4 shadow-lg text-white bg-gray-800 z-50">
       <div className="logo flex justify-start items-start gap-2">
         <Link href="/">
-          <div className="lg:w-auto ml-5 lg:m-auto items-center gap-3">
+          <div className="lg:w-auto lg:ml-5 lg:m-auto items-center gap-3">
             <Image
               width={160}
               height={60}
