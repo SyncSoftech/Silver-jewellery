@@ -662,7 +662,7 @@ const ProductCard = memo(function ProductCard({
   const colors = Array.isArray(product.color) ? product.color.filter(Boolean) : [];
 
   return (
-    <div className="lg:w-1/5 md:w-1/2 w-1/2 p-1 lg:p-4">
+    <div className="lg:w-1/5  md:w-1/2 w-1/2 p-1 lg:p-4">
       <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden transition-all duration-500 flex flex-col transform hover:-translate-y-2 cursor-pointer border border-gray-100">
         <div className="relative w-full aspect-square bg-white overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
@@ -839,7 +839,7 @@ const EarringsPage = ({ Products = {}, addToCart, buyNow, wishlist = {}, addToWi
   }, [keys.length]);
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "radial-gradient(circle, #FFF2Ef,#DBC4BF)" }}>
+    <div className="min-h-screen pt-20  lg:pt-0 relative overflow-hidden" style={{ background: "radial-gradient(circle, #FFF2Ef,#DBC4BF)" }}>
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-rose-200 rounded-full filter blur-3xl opacity-20 animate-pulse" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-200 rounded-full filter blur-3xl opacity-20 animate-pulse delay-1000" />

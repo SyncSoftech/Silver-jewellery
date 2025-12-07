@@ -283,7 +283,7 @@ export default function OrderSuccess() {
     : Math.max(0, subtotalVal - (discountVal || 0));
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 pt-32 lg:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">

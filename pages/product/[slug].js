@@ -2016,28 +2016,41 @@ const Post = ({
     : 0
 
   const chackServiceability = async () => {
-    try {
-      let pins = await fetch(`${process.env.HOST}/api/pincode`)
-      let pinJson = await pins.json()
-      if (pinJson.includes(parseInt(pin))) {
-        setservice(true)
-        toast.success('Your pincode is serviceable!', {
-          position: "bottom-center",
-          autoClose: 1000,
-        });
-      }
-      else {
-        setservice(false)
-        toast.error('Sorry, your pincode is not serviceable!', {
-          position: "bottom-center",
-          autoClose: 1000,
-        });
-      }
-    } catch (err) {
-      toast.error('Could not check pincode.', { position: 'bottom-center', autoClose: 1000 })
-      setservice(null)
+  try {
+    let res = await fetch(
+      `${process.env.NEXT_PUBLIC_HOST}/api/pincode?pincode=${pin}`
+    );
+
+    let data = await res.json();
+
+    const isServiceable =
+      data?.delivery_codes &&
+      data.delivery_codes.length > 0 &&
+      data.delivery_codes[0]?.postal_code?.pin;
+
+    if (isServiceable) {
+      setservice(true);
+      toast.success("Your pincode is serviceable!", {
+        position: "bottom-center",
+        autoClose: 1000,
+      });
+    } else {
+      setservice(false);
+      toast.error("Sorry, your pincode is not serviceable!", {
+        position: "bottom-center",
+        autoClose: 1000,
+      });
     }
+  } catch (err) {
+    console.error(err);
+    toast.error("Could not check pincode.", {
+      position: "bottom-center",
+      autoClose: 1000,
+    });
+    setservice(null);
   }
+};
+
 
   const onChangePin = (e) => {
     setpin(e.target.value)
@@ -2161,7 +2174,7 @@ const Post = ({
   // ---------------------------
   return (
     <>
-      <section className="body-font" style={{ background: 'radial-gradient(circle, #FFF2EF, #E0CAC5)' }}>
+      <section className="body-font pt-32" style={{ background: 'radial-gradient(circle, #FFF2EF, #E0CAC5)' }}>
         <ToastContainer position="bottom-center" autoClose={1000} />
         <div className="container px-5 py-12 mx-auto max-w-7xl">
           <div className="lg:flex lg:gap-12">

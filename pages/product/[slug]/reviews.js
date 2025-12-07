@@ -258,7 +258,7 @@ export default function ReviewsPage({ product, initialReviews = [], initialAvera
   const averageRating = initialAverageRating;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen pt-32 bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
         <Link href={`/product/${product.slug}`}>
           <span className="inline-flex items-center text-gray-700 hover:text-indigo-600 mb-6">

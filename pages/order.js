@@ -506,7 +506,7 @@ export default function OrderPage() {
 
   return (
     <section 
-      className="min-h-screen py-8 sm:py-12"
+      className="min-h-screen py-32  lg:pt-0 pb-5 lg:py-8 sm:py-12"
       style={{ background: 'radial-gradient(circle, #FFF2EF, #E0CAC5)' }}
     >
       <div className="container px-4 sm:px-5 mx-auto">

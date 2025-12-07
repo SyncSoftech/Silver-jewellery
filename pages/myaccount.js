@@ -767,6 +767,56 @@ const MyAccount = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+
+ const [pinStatus, setPinStatus] = useState({
+  loading: false,
+  valid: null,
+  message: ""
+});
+
+const checkPincodeRealtime = async (postalCode) => {
+  if (postalCode.length !== 6) {
+    setPinStatus({ loading: false, valid: null, message: "" });
+    return;
+  }
+
+  setPinStatus({ loading: true, valid: null, message: "Checking..." });
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_HOST}/api/pincode?pincode=${postalCode}`
+    );
+
+    const data = await res.json();
+
+    const isServiceable =
+      data?.delivery_codes &&
+      data.delivery_codes.length > 0 &&
+      data.delivery_codes[0]?.postal_code?.pin;
+
+    if (isServiceable) {
+      setPinStatus({
+        loading: false,
+        valid: true,
+        message: "Delivery available!"
+      });
+    } else {
+      setPinStatus({
+        loading: false,
+        valid: false,
+        message: "Not serviceable at this location."
+      });
+    }
+  } catch (error) {
+    console.error("Pin check error:", error);
+    setPinStatus({
+      loading: false,
+      valid: false,
+      message: "Error checking pincode"
+    });
+  }
+}
+
   useEffect(() => {
     if (!localStorage.getItem("token")) {
       router.push("/login?redirect=/myaccount");
@@ -970,7 +1020,7 @@ const MyAccount = () => {
   }
 
   return (
-    <div className=" pb-10 pt-36 lg:py-8"style={{ background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)' }}>
+    <div className=" pb-10 pt-36  lg:py-8"style={{ background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           {/* Header */}
@@ -1006,14 +1056,14 @@ const MyAccount = () => {
             {/* Sidebar - Mobile Overlay */}
             {sidebarOpen && (
               <div
-                className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                className="fixed inset-0 bg-black bg-opacity-50  lg:hidden"
                 onClick={() => setSidebarOpen(false)}
               />
             )}
 
             {/* Sidebar */}
             <div
-              className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gray-50 border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:transform-none ${
+              className={`fixed lg:static inset-y-0 left-0 z-50 lg:z-0 w-64 bg-gray-50 border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:transform-none ${
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
               } lg:translate-x-0`}
             >
@@ -1230,16 +1280,18 @@ const MyAccount = () => {
                     </button>
                   </div>
 
-                  {showAddressForm && (
-                    <AddressForm
-                      initialData={editingAddress}
-                      onSubmit={handleAddressSubmit}
-                      onCancel={() => {
-                        setShowAddressForm(false);
-                        setEditingAddress(null);
-                      }}
-                    />
-                  )}
+                 {showAddressForm && (
+  <AddressForm
+    initialData={editingAddress}
+    onSubmit={handleAddressSubmit}
+    onCancel={() => {
+      setShowAddressForm(false);
+      setEditingAddress(null);
+    }}
+    pinStatus={pinStatus}
+    checkPincodeRealtime={checkPincodeRealtime}
+  />
+)}
 
                   {addresses.length === 0 && !showAddressForm ? (
                     <div className="text-center py-12">
@@ -1319,27 +1371,49 @@ const MyAccount = () => {
 };
 
 // Address Form Component
-const AddressForm = ({ initialData, onSubmit, onCancel }) => {
+const AddressForm = ({ 
+  initialData = null, 
+  onSubmit, 
+  onCancel,
+  pinStatus,
+  checkPincodeRealtime 
+}) => {
   const [formData, setFormData] = useState({
-    label: initialData?.label || "Home",
-    fullName: initialData?.fullName || "",
-    phone: initialData?.phone || "",
-    street: initialData?.street || "",
-    city: initialData?.city || "",
-    state: initialData?.state || "",
-    postalCode: initialData?.postalCode || "",
-    landmark: initialData?.landmark || "",
-    addressType: initialData?.addressType || "shipping",
-    isDefault: initialData?.isDefault || false,
-  });
+  label: initialData?.label || "Home",
+  fullName: initialData?.fullName || "",
+  phone: initialData?.phone || "",
+  street: initialData?.street || "",
+  city: initialData?.city || "",
+  state: initialData?.state || "",
+  postalCode: initialData?.postalCode || "",
+  country: initialData?.country || "India",
+  landmark: initialData?.landmark || "",
+  addressType: initialData?.addressType || "shipping",
+  isDefault: initialData?.isDefault || false,
+});
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
+ const handleChange = (e) => {
+  const { name, value, type, checked } = e.target;
+  if (name === "postalCode") {
+    const numeric = value.replace(/\D/g, "").slice(0, 6);
+
+    setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      postalCode: numeric
     }));
-  };
+
+    if (numeric.length === 6) {
+      checkPincodeRealtime(numeric);
+    }
+
+    return;
+  }
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: type === "checkbox" ? checked : value,
+  }));
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1408,6 +1482,18 @@ const AddressForm = ({ initialData, onSubmit, onCancel }) => {
             required
             className="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+          {pinStatus.loading && (
+  <p className="text-xs mt-1 text-gray-500">Checking...</p>
+)}
+
+{pinStatus.valid === true && (
+  <p className="text-xs mt-1 text-green-600">✓ {pinStatus.message}</p>
+)}
+
+{pinStatus.valid === false && (
+  <p className="text-xs mt-1 text-red-600">✗ {pinStatus.message}</p>
+)}
+
         </div>
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1448,6 +1534,32 @@ const AddressForm = ({ initialData, onSubmit, onCancel }) => {
             className="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+        <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    State
+  </label>
+  <input
+    type="text"
+    name="state"
+    value={formData.state}
+    onChange={handleChange}
+    required
+    className="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  />
+</div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Country
+  </label>
+  <input
+    type="text"
+    name="country"
+    value={formData.country}
+    onChange={handleChange}
+    required
+    className="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  />
+</div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Landmark (Optional)
@@ -1496,12 +1608,21 @@ const AddressForm = ({ initialData, onSubmit, onCancel }) => {
           >
             Cancel
           </button>
-          <button
+          {/* <button
             type="submit"
             className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
             {initialData ? "Update Address" : "Add Address"}
-          </button>
+          </button> */}
+          <button
+  type="submit"
+  disabled={pinStatus.valid !== true}
+  className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm 
+    ${pinStatus.valid !== true ? "opacity-50 cursor-not-allowed bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}`}
+>
+  {initialData ? "Update Address" : "Add Address"}
+</button>
+
         </div>
       </form>
     </div>

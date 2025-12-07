@@ -746,7 +746,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto pt-32  lg:pt-0 pb-6 lg:py-8 px-4 sm:px-6 lg:px-8" style={{ background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)' }}>
       <h1 className="text-2xl font-semibold text-center mb-8">My Orders</h1>
 
       {orders.length === 0 ? (

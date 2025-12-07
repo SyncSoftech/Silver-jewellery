@@ -728,7 +728,7 @@ const NecklacesPage = ({ Products = {}, addToCart, buyNow, wishlist = {}, addToW
   }, [keys.length])
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)' }}>
+    <div className="min-h-screen pt-20  lg:pt-0 relative overflow-hidden" style={{ background: 'radial-gradient(circle, #FFF2Ef,#DBC4BF)' }}>
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-rose-200 rounded-full filter blur-3xl opacity-20 animate-pulse" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-200 rounded-full filter blur-3xl opacity-20 animate-pulse delay-1000" />

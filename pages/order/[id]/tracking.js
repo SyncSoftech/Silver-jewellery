@@ -3732,7 +3732,7 @@ export default function TrackingPage() {
   // JSX Render
   return (
     <div
-      className="min-h-screen p-4 sm:p-6 md:p-8"
+      className="min-h-screen pt-32 lg:pt-4 p-4 sm:p-6 md:p-8"
       style={{ background: "radial-gradient(circle at top, #FFF2Ef 0%, #EAD8D3 45%, #E0CAC5 100%)" }}
     >
       <div className="max-w-3xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-md">
