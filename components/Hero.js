@@ -665,7 +665,7 @@ export default function GoldEarringsHero() {
   }, [isAutoPlaying, slides.length]);
 
   return (
-    <div className="relative w-full overflow-hidden">
+    <div className="relative w-full mt-32 lg:mt-10 overflow-hidden">
       <div className="relative w-full h-[60vh] sm:h-[65vh] md:h-[75vh] lg:h-[80vh]">
         {/* Background Base */}
         <div className="absolute inset-0 bg-gradient-to-br from-rose-50 via-purple-50 to-pink-50 z-0"></div>
