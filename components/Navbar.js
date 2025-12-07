@@ -3854,7 +3854,7 @@ const Navbar = ({
     <div className="fixed top-0 left-0 right-0 flex flex-col md:flex-row md:justify-start justify-center items-center  px-4 shadow-lg text-white bg-gray-800 z-50 ">
       <div className="logo md:mx-4 cursor-pointer transition-transform hover:scale-105 duration-300 flex items-center gap-2">
         <Link href="/">
-          <div className=" w-[25rem] lg:w-auto ml-2 lg:m-auto items-center   gap-3">
+          <div className=" w-[25rem] lg:w-auto ml-5 lg:m-auto items-center   gap-3">
             <Image
               width={160}
               height={60}
@@ -4023,7 +4023,7 @@ const Navbar = ({
         )}
       </div>
 
-      <div className="nav lg:block">
+      <div className="nav py-2 lg:block">
         <ul className="flex items-center font-alegreya-sans-medium space-x-8 font-medium md:text-lg tracking-wide">
           <Link href={"/bracelets"}>
             <span className="hover:text-slate-700 transition-all duration-300 relative group">

@@ -13,7 +13,7 @@ const Footer = () => {
           <Link href="/">
             <div className="flex title-font font-medium items-center md:justify-start justify-center text-gray-900 cursor-pointer">
               <Image 
-                src='/LOGO.jpg' 
+                src='/LOGO.png' 
                 width={200} 
                 height={80} 
                 alt='Silver Jewellery Logo'
