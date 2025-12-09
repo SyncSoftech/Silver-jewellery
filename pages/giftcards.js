@@ -130,7 +130,7 @@ export default function UserGiftCards() {
 
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-3xl pt-28 lg:pt-5 mx-auto p-6">
       <h1 className="text-3xl font-semibold text-rose-700 mb-6">🎁 Your Gift Cards</h1>
 
       <button
