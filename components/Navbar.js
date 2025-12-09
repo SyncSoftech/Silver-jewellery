@@ -442,6 +442,11 @@ const Navbar = ({
                     My Account
                   </li>
                 </Link>
+                <Link href={"/giftcards"}>
+                  <li className="py-2 text-gray-500 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold">
+                    Gift Cards
+                  </li>
+                </Link>
                 <Link href={"/orders"}>
                   <li className="py-2 text-gray-500 hover:text-slate-700 hover:translate-x-1 transition-all text-sm font-semibold">
                     Orders
