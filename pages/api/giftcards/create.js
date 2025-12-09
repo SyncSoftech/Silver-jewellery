@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       description: `Gift card for ${receiverName}`,
       discountType: "fixed",
       value: amount,
-      minOrderAmount: 0,
+      minOrderAmount: amount,
       startDate: new Date(),
       endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year validity
       applyToAll: true,
