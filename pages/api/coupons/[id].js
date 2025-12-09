@@ -22,37 +22,7 @@ const handler = async (req, res) => {
 
     // PUT /api/coupons/:id  (partial update)
     if (method === 'PUT') {
-    //   const updates = { ...req.body };
-
-    //   // If code is provided, normalize it
-    //   if (typeof updates.code !== 'undefined') {
-    //     updates.code = String(updates.code).trim().toUpperCase();
-    //   }
-
-    //   // Convert empty string numerics to null where appropriate
-    //   if (updates.maxDiscount === '') updates.maxDiscount = null;
-    //   if (updates.usageLimit === '') updates.usageLimit = null;
-
-    //   // Prevent updating createdAt/_id
-    //   delete updates._id;
-    //   delete updates.createdAt;
-    //   delete updates.__v;
-
-    //   // If code is being changed to an existing code, handle duplicate error
-    //   try {
-    //     const coupon = await Coupon.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-    //     if (!coupon) return res.status(404).json({ success: false, message: 'Coupon not found' });
-    //     return res.status(200).json({ success: true, data: coupon });
-    //   } catch (err) {
-    //     // handle duplicate key on code
-    //     if (err && err.code === 11000) {
-    //       return res.status(400).json({ success: false, message: 'Coupon code already exists', field: 'code' });
-    //     }
-    //     // validation errors
-    //     return res.status(400).json({ success: false, message: err.message || 'Failed to update coupon' });
-    //   }
-
-    // inside method === 'PUT' branch
+   
 const updates = { ...req.body };
 
 // If code is provided, normalize it
