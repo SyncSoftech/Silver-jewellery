@@ -2,8 +2,7 @@
   "crons": [
     {
       "path": "/api/birthday/generate",
-      "schedule": "0 0 * * *",
-      "timezone": "Asia/Kolkata"
+      "schedule": "0 0 * * *"
     }
   ]
 }
