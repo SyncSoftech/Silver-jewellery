@@ -20,7 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.552.0",
     "mongoose": "^8.19.3",
-    "next": "^14.2.3",
+    "next": "14.2.35",
     "nodemailer": "^7.0.10",
     "paytmchecksum": "^1.5.1",
     "quill": "^2.0.3",
